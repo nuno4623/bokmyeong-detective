@@ -35,7 +35,7 @@
    ═══════════════════════════════════════════════════════════════ */
 
 var SHEET_NAME = '진행상황';
-var HEADERS = ['모둠명', '연 단서', '단서 목록', '지목 시도', '해결', '막힌 문제',
+var HEADERS = ['모둠명', '연 단서', '단서 목록', '지목 시도', '해결', '막힌 문제(현재)',
                '마지막 활동', '마지막 접속', '지목 용의자', '근거1', '근거2', '근거3', '악보 위치'];
 
 function sheet_() {
@@ -95,7 +95,7 @@ function doPost(e) {
       (d.opened || []).join(' '),
       d.tries || 0,
       d.solved ? '해결' : '',
-      (d.stuck || []).join(' '),
+      typeof d.stuck === 'string' ? d.stuck : (d.stuck || []).join(' '),
       lastActive,
       now,
       d.suspect || '',
@@ -133,7 +133,7 @@ function doGet() {
           opened: String(r[2] || '').split(' ').filter(String).map(Number),
           tries: Number(r[3]) || 0,
           solved: r[4] === '해결',
-          stuck: String(r[5] || '').split(' ').filter(String).map(Number),
+          stuck: String(r[5] || ''),
           lastActive: r[6] ? new Date(r[6]).getTime() : 0,
           lastSeen: r[7] ? new Date(r[7]).getTime() : 0,
           suspect: String(r[8] || '')

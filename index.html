@@ -124,6 +124,20 @@
   .progress i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--lemon),var(--lemon-deep));
     transition:width .5s ease}
 
+  /* 다음 수사 버튼 */
+  .drawbox{margin-top:18px; background:linear-gradient(135deg,#4C5A78,#3A465E); border-radius:18px;
+    padding:22px 26px; display:flex; align-items:center; gap:20px; flex-wrap:wrap;
+    box-shadow:0 8px 24px rgba(43,50,66,.20)}
+  .drawbox .txtcol{flex:1; min-width:240px}
+  .drawbox .st{font-size:12px; font-weight:800; color:var(--lemon); letter-spacing:.04em}
+  .drawbox h3{font-size:20px; font-weight:800; color:#fff; margin-top:6px; letter-spacing:-.02em}
+  .drawbox p{font-size:13.5px; font-weight:600; color:#C9D2E4; margin-top:7px; line-height:1.7}
+  .drawbox .btn{font-size:18px; padding:16px 34px}
+  .drawbox .waitbox{text-align:center; color:#fff}
+  .drawbox .waitbox .cd{font-size:34px; font-weight:800; color:var(--lemon); display:block; line-height:1.2}
+  .drawbox .waitbox .lb{font-size:13px; font-weight:700; color:#C9D2E4}
+  .drawbox.done{background:linear-gradient(135deg,#3F9A6E,#2F7A56)}
+
   .board{display:grid; grid-template-columns:repeat(auto-fill,minmax(196px,1fr)); gap:14px; margin-top:18px}
   .clue{position:relative; background:var(--cream); border:2px solid var(--blue-line);
     border-radius:16px; padding:14px; text-align:left; box-shadow:var(--shadow);
@@ -229,6 +243,13 @@
   #resultCard .rbody{padding:20px 24px 24px}
   .endart{border-radius:14px; overflow:hidden; border:2px solid var(--blue-line)}
   .endart img{width:100%; aspect-ratio:16/9; object-fit:cover}
+  .finale{margin-top:16px; display:flex; gap:16px; align-items:center; background:#FFFDF2;
+    border:2px solid var(--lemon-deep); border-radius:14px; padding:14px 16px; flex-wrap:wrap}
+  .finale img{width:92px; height:92px; object-fit:contain; flex-shrink:0}
+  .finale .ftx{flex:1; min-width:200px}
+  .finale .fh{font-size:15px; font-weight:800; color:var(--blue)}
+  .finale .fd{font-size:14.5px; font-weight:600; line-height:1.8; margin-top:6px}
+  .finale .fd b{color:var(--blue); font-weight:800; background:linear-gradient(transparent 60%, #F4EDB8 60%)}
   .script{margin-top:16px; display:grid; gap:9px}
   .script .ln{display:flex; gap:10px; align-items:flex-start; background:#fff;
     border:2px solid var(--blue-line); border-radius:12px; padding:11px 13px}
@@ -319,7 +340,7 @@
       <div class="logo">🔍 복명초 탐정단</div>
       <span class="teamchip" id="chipTeam">모둠</span>
       <div class="spacer"></div>
-      <div class="stat">연 단서 <b id="statOpen">0</b> / 13</div>
+      <div class="stat">연 단서 <b id="statOpen">0</b> / <span id="statTotal">12</span></div>
       <div class="stat">지목 시도 <b id="statTry">0</b>회</div>
       <button class="mini" id="resetBtn">처음부터</button>
     </div>
@@ -328,12 +349,13 @@
     <div class="boardhead">
       <div style="flex:1; min-width:260px">
         <div class="h2"><span class="tag">STEP 3</span>단서 보드</div>
-        <p class="sub">잠긴 카드를 누르면 음악 문제가 나와요. 정답을 맞히면 단서가 열립니다.<br>
-          단서를 <b>8개 이상</b> 열면 범인을 지목할 수 있어요.</p>
+        <p class="sub">수사를 진행하면 음악 문제가 <b>무작위로</b> 나와요. 문제는 고를 수 없습니다.<br>
+          정답을 맞히면 단서가 하나씩 열립니다. <b>8개</b>를 열면 범인을 지목할 수 있어요.</p>
         <div class="progress"><i id="progBar"></i></div>
       </div>
       <button class="btn" id="accuseBtn" disabled>🎯 범인 지목하기</button>
     </div>
+    <div class="drawbox" id="drawBox"></div>
     <div class="board" id="board"></div>
   </div>
 </section>
@@ -449,7 +471,7 @@ const SUSPECTS = [
   { id:'dore',  img:'img/suspect_2.webp', name:'도레미',       role:'6학년 피아노 반주자<br>실력파' },
   { id:'bajo',  img:'img/suspect_3.webp', name:'바장조',       role:'6학년 리코더 파트장<br>이름부터 수상' },
   { id:'mudae', img:'img/suspect_4.webp', name:'무대열',       role:'무대 담당 · 조명 음향<br>밤늦게까지 남음' },
-  { id:'swim',  img:'img/suspect_5.webp', name:'쉼표',         role:'음악실 고양이<br>종이를 좋아함' },
+  { id:'swim',  img:'img/suspect_5.webp', name:'쉼표',         role:'음악실 마스코트<br>늘 음악실에 있음' },
 ];
 const CULPRIT = 'swim';
 
@@ -479,100 +501,194 @@ function h53(str, seed){
 const saltFor = n => 0x4C5A78 + n * 7919;
 
 const op = s => `<span class="op">${s}</span>`;
-const QUESTIONS = [
-  { n:1, star:1, type:'num', key:['fmmsz0rdl2'], unit:'박',
+const tx = s => `<span class="txt">${s}</span>`;
+
+/* 문제 은행 33개. 학생은 고를 수 없고, 단서 단계에 맞는 난이도 칸에서 무작위로 뽑힌다.
+   ★ = 단서 1~4, ★★ = 단서 5~8, ★★★ = 단서 9~12 에서 나온다. */
+const QBANK = [
+  /* ───────── ★ 쉬움 ───────── */
+  { id:1, star:1, type:'num', key:['fmmsz0rdl2'], unit:'박',
     expr: noteSVG('q')+op('+')+noteSVG('q')+op('='),
     ask:'4분음표 + 4분음표는 몇 박일까요?',
     hint:'4분음표(♩) 하나가 1박이야. 1 + 1은?' },
-  { n:2, star:1, type:'num', key:['2c8th5u8h8o'], unit:'박',
-    expr: noteSVG('q')+`<span class="txt">= 1박일 때,</span>`+noteSVG('w')+op('='),
+  { id:2, star:1, type:'num', key:['2c8th5u8h8o'], unit:'박',
+    expr: noteSVG('q')+tx('= 1박일 때,')+noteSVG('w')+op('='),
     ask:'4분음표를 1박이라고 할 때 온음표는 몇 박일까요?',
-    hint:'온음표(𝅝) 하나 안에 4분음표가 몇 개 들어갈까? 그 개수가 곧 박이야.' },
-  { n:3, star:1, type:'text', key:['2alxy1gjm4b'], unit:'',
-    expr:`<span class="txt">바장조(F major)의 <b>으뜸음</b>은?</span>`,
+    hint:'온음표 하나 안에 4분음표가 몇 개 들어갈까? 그 개수가 곧 박이야.' },
+  { id:3, star:1, type:'text', key:['2alxy1gjm4b'], unit:'',
+    expr: tx('바장조의 <b>으뜸음</b>은?'),
     ask:'음이름으로 적어 주세요. (도·레·미·파·솔·라·시)',
     hint:'바장조의 "바"가 우리말 음이름이야. 다=도, 라=레, 마=미, 바=?' },
-  { n:4, star:2, type:'num', key:['14jo2487frm'], unit:'박',
+  { id:4, star:1, type:'num', key:['trguch3se'], unit:'개',
+    expr: tx('4/4박자 한 마디는')+noteSVG('q')+tx('몇 개?'),
+    ask:'4분음표 몇 개로 한 마디가 채워질까요?',
+    hint:'박자표 아래 4는 "4분음표를 1박으로", 위 4는 "한 마디에 4박"이라는 뜻이야.' },
+  { id:5, star:1, type:'num', key:['nsi6x4p9gw'], unit:'박',
+    expr: noteSVG('e')+op('+')+noteSVG('e')+op('='),
+    ask:'8분음표 + 8분음표는 몇 박일까요?',
+    hint:'8분음표는 반 박이야. 반 박 두 개를 합치면?' },
+  { id:6, star:1, type:'num', key:['150unr7we1d'], unit:'박',
+    expr: noteSVG('h')+op('='),
+    ask:'2분음표는 몇 박일까요?',
+    hint:'온음표 4박을 반으로 나눈 게 2분음표야.' },
+  { id:7, star:1, type:'num', key:['1d6xm4fzl0d'], unit:'개',
+    expr: noteSVG('w')+op('=')+noteSVG('h')+tx('× ?'),
+    ask:'온음표는 2분음표 몇 개와 같을까요?',
+    hint:'온음표 4박, 2분음표 2박. 4 안에 2가 몇 번 들어갈까?' },
+  { id:8, star:1, type:'num', key:['20ij71rifj'], unit:'박',
+    expr: restSVG('q')+op('='),
+    ask:'4분쉼표는 몇 박 쉴까요?',
+    hint:'쉼표는 같은 이름의 음표와 길이가 똑같아. 4분음표가 1박이니까?' },
+
+  /* ───────── ★★ 보통 ───────── */
+  { id:9, star:2, type:'num', key:['y48xhnvydc'], unit:'박',
     expr: noteSVG('qd')+op('+')+noteSVG('e')+op('='),
     ask:'점4분음표 + 8분음표는 몇 박일까요?',
-    hint:'점이 붙으면 원래 길이의 절반이 더해져. 4분음표 1박 + 절반 0.5박 = 1.5박. 거기에 8분음표 0.5박을 더하면?' },
-  { n:5, star:2, type:'text', key:['nue0yakhf','slneribg5q','1ve7rqsylls','1pglhnd65jc'], unit:'',
-    expr:`<span class="txt">바장조 조표에서 <b>♭</b>이 붙는 음은?</span>`,
+    hint:'점이 붙으면 원래 길이의 절반이 더해져. 1박 + 0.5박 = 1.5박. 거기에 0.5박을 더하면?' },
+  { id:10, star:2, type:'text', key:['hf3slt0cm','1pvk0tnjgus','bw9lqe1gd2','2bfw2ibbqnf'], unit:'',
+    expr: tx('바장조 조표에서 <b>♭</b>이 붙는 음은?'),
     ask:'음이름으로 적어 주세요.',
-    hint:'바장조 조표에는 ♭이 딱 하나 붙어. 파에서 시작해 한 옥타브를 올라가 보면 어느 음이 반음 내려가야 할까?' },
-  { n:6, star:2, type:'num', key:['150unr7we1d'], unit:'박',
+    hint:'바장조 조표에는 ♭이 딱 하나 붙어. 파에서 한 옥타브 올라가 보면 어느 음이 반음 내려가야 할까?' },
+  { id:11, star:2, type:'num', key:['21v5m1ve4ep'], unit:'박',
     expr: noteSVG('e')+op('+')+noteSVG('e')+op('+')+noteSVG('q')+op('='),
     ask:'8분음표 + 8분음표 + 4분음표는 몇 박일까요?',
-    hint:'8분음표는 반 박(0.5박)이야. 8분음표 둘을 합치면 4분음표 하나와 같아져.' },
-  { n:7, star:1, type:'num', key:['25hchfepqg6'], unit:'개',
-    expr:`<span class="txt">4/4박자 한 마디는</span>`+noteSVG('q')+`<span class="txt">몇 개?</span>`,
-    ask:'4분음표 몇 개로 한 마디가 채워질까요?',
-    hint:'박자표 아래 숫자 4는 "4분음표를 1박으로", 위 숫자 4는 "한 마디에 4박"이라는 뜻이야.' },
-  { n:8, star:2, type:'text', key:['2540n5l351g'], unit:'',
-    expr:`<span class="txt">바장조에서 음이름 <b>‘라’</b>는 계이름으로?</span>`,
+    hint:'8분음표 둘을 합치면 4분음표 하나와 같아져.' },
+  { id:12, star:2, type:'text', key:['snbkp2vjls'], unit:'',
+    expr: tx('바장조에서 음이름 <b>‘라’</b>는 계이름으로?'),
     ask:'계이름으로 적어 주세요. (도·레·미·파·솔·라·시)',
     hint:'바장조는 파가 "도"야. 파=도, 솔=레, 라=?' },
-  { n:9, star:3, type:'num', key:['ezgxuwdzyx'], unit:'박',
-    expr: noteSVG('hd')+op('+')+noteSVG('q')+op('='),
-    ask:'점2분음표 + 4분음표는 몇 박일까요?',
-    hint:'2분음표는 2박, 점이 붙으면 절반인 1박이 더해져서 3박이야. 거기에 4분음표 1박을 더하면?' },
-  { n:10, star:2, type:'text', key:['1a4aecg6f1y'], unit:'',
-    expr:`<span class="txt">바장조 <b>으뜸화음(Ⅰ)</b>의 구성음은?</span>`,
+  { id:13, star:2, type:'text', key:['1autczc9l91'], unit:'',
+    expr: tx('바장조 <b>으뜸화음(Ⅰ)</b>의 구성음은?'),
     ask:'음이름 세 개를 순서대로 적어 주세요. (예: 도미솔)',
     hint:'으뜸음 파에서 한 음씩 건너뛰며 쌓아 봐. 파 - (솔) - 라 - (시) - ?' },
-  { n:11, star:3, type:'num', key:['14hypgoqmik'], unit:'박',
-    expr:`<span class="txt">3/4박자 한 마디에</span>`+noteSVG('h')+`<span class="txt">하나가 있으면 남은 박은?</span>`,
-    ask:'남은 박은 몇 박일까요?',
-    hint:'3/4박자 한 마디는 3박이야. 2분음표가 2박을 차지했으니 3에서 2를 빼 보자.' },
-  { n:12, star:2, type:'text', key:['5zj11usr3w'], unit:'',
-    expr:`<span class="txt">바장조 <b>딸림화음(Ⅴ)</b>의 구성음은?</span>`,
+  { id:14, star:2, type:'text', key:['fnmydbjc1n'], unit:'',
+    expr: tx('바장조 <b>딸림화음(Ⅴ)</b>의 구성음은?'),
     ask:'음이름 세 개를 순서대로 적어 주세요.',
-    hint:'딸림음은 으뜸음 파에서 다섯 번째 음이야. 파-솔-라-시-도. 그 도 위에 한 음씩 건너뛰며 쌓아 봐.' },
-  { n:13, star:3, type:'num', key:['17h31in1bzj'], unit:'개',
-    expr: noteSVG('w')+op('=')+noteSVG('e')+`<span class="txt">× ?</span>`,
+    hint:'딸림음은 파에서 다섯 번째 음이야. 파-솔-라-시-도. 그 도 위에 한 음씩 건너뛰며 쌓아 봐.' },
+  { id:15, star:2, type:'num', key:['k5vvyzhigk'], unit:'개',
+    expr: noteSVG('qd')+op('=')+noteSVG('e')+tx('× ?'),
+    ask:'점4분음표는 8분음표 몇 개와 같을까요?',
+    hint:'점4분음표는 1.5박, 8분음표는 0.5박. 1.5 안에 0.5가 몇 번?' },
+  { id:16, star:2, type:'num', key:['d0js3ahy1c'], unit:'박',
+    expr: restSVG('h')+op('+')+restSVG('q')+op('='),
+    ask:'2분쉼표 + 4분쉼표는 몇 박일까요?',
+    hint:'쉼표도 음표와 길이가 같아. 2박 + 1박.' },
+  { id:17, star:2, type:'num', key:['t7i0twk51v'], unit:'개',
+    expr: noteSVG('s')+tx('4개')+op('=')+noteSVG('q')+tx('× ?'),
+    ask:'16분음표 4개는 4분음표 몇 개와 같을까요?',
+    hint:'16분음표는 0.25박이야. 0.25가 네 개면 몇 박이 될까?' },
+  { id:18, star:2, type:'num', key:['1iwt4kj5kcd'], unit:'박',
+    expr: tx('3/4박자 한 마디에')+noteSVG('q')+tx('하나가 있으면 남은 박은?'),
+    ask:'남은 박은 몇 박일까요?',
+    hint:'3/4박자 한 마디는 3박. 4분음표가 1박을 썼으니 3에서 1을 빼자.' },
+  { id:19, star:2, type:'text', key:['4q9ynmqys1'], unit:'',
+    expr: tx('바장조에서 계이름 <b>‘솔’</b>은 음이름으로?'),
+    ask:'음이름으로 적어 주세요.',
+    hint:'바장조는 파가 "도"야. 도=파, 레=솔, 미=라, 파=시♭, 솔=?' },
+  { id:20, star:2, type:'num', key:['1wd9x30kr09'], unit:'박',
+    expr: noteSVG('w')+op('−')+noteSVG('h')+op('='),
+    ask:'온음표에서 2분음표만큼을 빼면 몇 박이 남을까요?',
+    hint:'온음표 4박에서 2분음표 2박을 빼 보자.' },
+
+  /* ───────── ★★★ 어려움 ───────── */
+  { id:21, star:3, type:'num', key:['28jilstbht'], unit:'박',
+    expr: noteSVG('hd')+op('+')+noteSVG('q')+op('='),
+    ask:'점2분음표 + 4분음표는 몇 박일까요?',
+    hint:'2분음표 2박, 점이 붙어 1박이 더해져 3박. 거기에 1박을 더하면?' },
+  { id:22, star:3, type:'num', key:['23qrjuyv42e'], unit:'박',
+    expr: tx('3/4박자 한 마디에')+noteSVG('h')+tx('하나가 있으면 남은 박은?'),
+    ask:'남은 박은 몇 박일까요?',
+    hint:'3/4박자 한 마디는 3박. 2분음표가 2박을 차지했어.' },
+  { id:23, star:3, type:'num', key:['1ekeb8fa073'], unit:'개',
+    expr: noteSVG('w')+op('=')+noteSVG('e')+tx('× ?'),
     ask:'온음표는 8분음표 몇 개와 같을까요?',
-    hint:'온음표는 4박, 8분음표는 반 박(0.5박)이야. 4를 0.5로 나누면?' },
+    hint:'온음표 4박, 8분음표 0.5박. 4를 0.5로 나누면?' },
+  { id:24, star:3, type:'num', key:['1nvol1yb2ln'], unit:'개',
+    expr: noteSVG('hd')+op('=')+noteSVG('e')+tx('× ?'),
+    ask:'점2분음표는 8분음표 몇 개와 같을까요?',
+    hint:'점2분음표는 3박. 3 안에 0.5가 몇 번 들어갈까?' },
+  { id:25, star:3, type:'num', key:['u0ligzkry7'], unit:'박',
+    expr: noteSVG('h')+op('+')+noteSVG('qd')+op('+')+noteSVG('e')+op('='),
+    ask:'2분음표 + 점4분음표 + 8분음표는 몇 박일까요?',
+    hint:'2 + 1.5 + 0.5. 뒤의 두 개를 먼저 더하면 깔끔해져.' },
+  { id:26, star:3, type:'num', key:['g5i8wraln6'], unit:'개',
+    expr: tx('6/8박자 한 마디는')+noteSVG('e')+tx('몇 개?'),
+    ask:'8분음표 몇 개로 한 마디가 채워질까요?',
+    hint:'박자표 아래 8은 "8분음표를 한 박으로", 위 6은 "한 마디에 여섯"이라는 뜻이야.' },
+  { id:27, star:3, type:'num', key:['1uweqcvaafx'], unit:'박',
+    expr: noteSVG('s')+tx('8개')+op('='),
+    ask:'16분음표 8개는 모두 몇 박일까요?',
+    hint:'16분음표 하나가 0.25박. 네 개가 1박이니까 여덟 개면?' },
+  { id:28, star:3, type:'num', key:['ikn1wlhs4y'], unit:'박',
+    expr: restSVG('qd')+op('+')+noteSVG('e')+op('='),
+    ask:'점4분쉼표 + 8분음표는 몇 박일까요?',
+    hint:'점4분쉼표는 1.5박 쉬는 거야. 거기에 0.5박.' },
+  { id:29, star:3, type:'text', key:['29136hm1fty'], unit:'',
+    expr: tx('바장조에서 음이름 <b>‘시♭’</b>은 계이름으로?'),
+    ask:'계이름으로 적어 주세요.',
+    hint:'파=도, 솔=레, 라=미, 그 다음 시♭은?' },
+  { id:30, star:3, type:'text', key:['1w3o8kbxkvd'], unit:'',
+    expr: tx('바장조의 <b>딸림음</b>(다섯 번째 음)의 음이름은?'),
+    ask:'음이름으로 적어 주세요.',
+    hint:'으뜸음 파부터 세어 보자. 파-솔-라-시♭-?' },
+  { id:31, star:3, type:'num', key:['26rlmq3ean1'], unit:'박',
+    expr: tx('4/4박자 한 마디에')+noteSVG('q')+tx('하나와')+noteSVG('e')+noteSVG('e')+tx('가 있으면 남은 박은?'),
+    ask:'남은 박은 몇 박일까요?',
+    hint:'한 마디 4박. 4분음표 1박 + 8분음표 둘 1박 = 2박을 썼어.' },
+  { id:32, star:3, type:'num', key:['1y47zdcnnuw'], unit:'박',
+    expr: tx('3/4박자 <b>세 마디</b>는 모두 몇 박?'),
+    ask:'세 마디를 다 합치면 몇 박일까요?',
+    hint:'한 마디가 3박이야. 세 마디니까 곱하기 3.' },
+  { id:33, star:3, type:'num', key:['137i2vg7y6i'], unit:'박',
+    expr: noteSVG('q')+op('+')+noteSVG('e')+op('+')+noteSVG('e')+op('+')+noteSVG('h')+op('='),
+    ask:'4분음표 + 8분음표 + 8분음표 + 2분음표는 몇 박일까요?',
+    hint:'8분음표 둘을 먼저 묶으면 1박. 1 + 1 + 2.' },
 ];
 
-/* 단서 13개 — 기획서 §5 그대로 */
+/* 단서 13개 — 기획서 §5 그대로.
+   tier 로 공개 순서를 통제한다. 단서는 학생이 고르는 게 아니라 정해진 흐름대로 열린다.
+     tier 1 (현장·알리바이) → tier 2 (엇갈리는 증거) → tier 3 (결정타)
+   같은 tier 안에서는 모둠마다 순서가 섞이므로, 옆 모둠과 진행이 똑같지 않다.
+   13번(황금 열쇠)은 사실상 정답을 그대로 말해 주는 카드라 뽑기에서 빼고,
+   범인을 맞힌 뒤 결말에서만 공개한다. */
 const CLUES = [
-  { n:1,  img:'img/clue_01.webp', title:'악보 케이스',
+  { n:1, tier:1, img:'img/clue_01.webp', title:'악보 케이스',
     text:'케이스는 열려 있고 잠금장치가 부서지지 않았다. <b>누군가 열쇠 없이 열었거나, 원래 열려 있었다.</b>',
     who:'김서준', line:'억지로 뜯은 흔적은 없어.' },
-  { n:2,  img:'img/clue_02.webp', title:'CCTV',
+  { n:2, tier:1, img:'img/clue_02.webp', title:'CCTV',
     text:'저녁 <b>7시 40분</b>, 무대 담당 무대열이 음악실 앞 복도를 지나감. 손엔 케이블.',
     who:'이승하', line:'일단 무대열 아저씨, 시간 기록.' },
-  { n:3,  img:'img/clue_03.webp', title:'회의록',
+  { n:3, tier:1, img:'img/clue_03.webp', title:'회의록',
     text:'강지휘 선생님은 <b>6시~7시 교무실 회의</b>. 7시 이후엔 퇴근.',
     who:'전소민', line:'선생님은 그 시간 음악실에 없었어.' },
-  { n:4,  img:'img/clue_04.webp', title:'발자국',
+  { n:4, tier:2, img:'img/clue_04.webp', title:'발자국',
     text:'창틀에 <b>작은 발자국 4개</b>, 진흙. 크기 약 5cm.',
     who:'김서준', line:'5cm? 사람 발이 아닌데…' },
-  { n:5,  img:'img/clue_05.webp', title:'회색 털',
+  { n:5, tier:3, img:'img/clue_05.webp', title:'회색 털',
     text:'케이스 잠금쇠에 <b>회색 털</b> 한 뭉치.',
     who:'권범준', line:'회색… 누가 회색이지?' },
-  { n:6,  img:'img/clue_06.webp', title:'녹음 파일',
+  { n:6, tier:1, img:'img/clue_06.webp', title:'녹음 파일',
     text:'도레미의 연습 녹음: <b>6:10~7:00</b>, 옆 연습실. 바장조 반주 연습 소리.',
     who:'이승하', line:'도레미도 그 시간엔 옆방에 있었어.' },
-  { n:7,  img:'img/clue_07.webp', title:'쪽지',
+  { n:7, tier:2, img:'img/clue_07.webp', title:'쪽지',
     text:'바장조가 쓴 쪽지: “내 리코더 악보 어디 갔지…” — 자기 악보를 찾느라 <b>음악실을 뒤졌다</b>고 한다.',
     who:'전소민', line:'수상하지만, 잃어버린 건 자기 악보야.' },
-  { n:8,  img:'img/clue_08.webp', title:'신발 + 발자국',
+  { n:8, tier:2, img:'img/clue_08.webp', title:'신발 + 발자국',
     text:'무대열의 신발은 <b>270mm</b>. 창틀 발자국은 5cm. <b>무대열은 창틀 발자국의 주인이 아니다.</b>',
     who:'김서준', line:'발자국은 무대열 아저씨 게 아니야.' },
-  { n:9,  img:'img/clue_09.webp', title:'찢긴 악보',
+  { n:9, tier:3, img:'img/clue_09.webp', title:'찢긴 악보',
     text:'복도에서 발견된 악보 조각. 가장자리에 <b>작은 이빨 자국</b>.',
     who:'권범준', line:'물어뜯었어. 사람은 이렇게 안 해.' },
-  { n:10, img:'img/clue_10.webp', title:'고양이 장난감',
+  { n:10, tier:3, img:'img/clue_10.webp', title:'고양이 장난감',
     text:'피아노 밑에 <b>낚싯줄 장난감</b>. 어제 저녁에 누가 고양이랑 놀았다.',
     who:'이승하', line:'쉼표가 어젯밤 음악실에 있었단 뜻이야.' },
-  { n:11, img:'img/clue_11.webp', title:'창문 잠금장치',
+  { n:11, tier:2, img:'img/clue_11.webp', title:'창문 잠금장치',
     text:'음악실 창문은 <b>안에서만</b> 열린다. 밖에서 들어온 게 아니라 <b>안에 있던 존재가 나갔다</b>.',
     who:'전소민', line:'범인은 원래 안에 있었어.' },
-  { n:12, img:'img/clue_12.webp', title:'급식실 목격',
+  { n:12, tier:3, img:'img/clue_12.webp', title:'급식실 목격',
     text:'급식실 아주머니: “7시 반쯤 <b>회색 고양이가 종이를 물고</b> 복도로 뛰어갔어요.”',
     who:'김서준', line:'종이를 물고?!' },
-  { n:13, img:'img/clue_13.webp', title:'황금 열쇠',
+  { n:13, tier:0, img:'img/clue_13.webp', title:'황금 열쇠',
     text:'<b>결정적 단서</b>: 피아노 밑 상자 안에서 <b>악보 발견</b>. 위에 쉼표가 자고 있음.',
     who:'권범준', line:'사건 종료… 근데 악보가 조금 찢겼어.' },
 ];
@@ -600,6 +716,14 @@ const DECOY_WORDS = [
   { label:'바장조 쪽지', words:['쪽지','바장조가'] },
 ];
 
+/* 틀리게 지목했을 때, 왜 그 사람이 아닌지 짚어 준다 — 다시 생각할 실마리만 주고 답은 말하지 않는다 */
+const REBUT = {
+  kang: '이승하: "선생님은 <b>6시부터 7시까지 교무실 회의</b>였어. 회의록에 그대로 적혀 있잖아."<br>전소민: "시간이 안 맞아. 다른 단서를 더 찾아보자."',
+  dore: '이승하: "도레미는 <b>6시 10분부터 7시까지</b> 옆 연습실에 있었어. 녹음이 남아 있어."<br>권범준: "녹음 파일은 시간을 속이기 어려워."',
+  bajo: '전소민: "바장조가 음악실을 뒤진 건 맞아. 그런데 <b>잃어버린 건 자기 리코더 악보</b>였어."<br>김서준: "자기 악보를 찾으러 온 사람이 왜 남의 악보를 가져가겠어?"',
+  mudae:'김서준: "무대열 아저씨 신발은 <b>270mm</b>야. 그런데 창틀 발자국은 <b>5cm</b>였어."<br>이승하: "CCTV에 찍혔다고 다 범인은 아니야. 발 크기가 아예 달라."',
+};
+
 const PADLET = 'https://padlet.com/dpad566776/6-s023ofzett0iigolsg49';
 
 /* 교사 모드 — 주소 뒤에 ?teacher=1 을 붙였을 때만 채점 참고 줄이 보인다.
@@ -609,13 +733,42 @@ const TEACHER = /[?&]teacher=1/.test(location.search);
 /* ═══════════════════════════════════════════
    상태 · 저장
    ═══════════════════════════════════════════ */
-const KEY = 'bm_detective_v1';
+const KEY = 'bm_detective_v2';
+const POOL = CLUES.filter(c => c.tier > 0);     // 뽑기에 들어가는 단서 12개 (13번 제외)
+const NEED = 8;                                  // 범인 지목에 필요한 단서 수
+const FINALE = CLUES[12];                        // 황금 열쇠 — 결말에서만
+
+const shuffle = a => { a = a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+
+/* 모둠마다 다른 단서 순서를 만든다. tier 안에서만 섞으므로 이야기 흐름은 유지된다. */
+function newClueOrder(){
+  return [1,2,3].flatMap(t => shuffle(POOL.filter(c => c.tier === t).map(c => c.n)));
+}
+
 const defaultState = () => ({
-  team:'', opened:[], wrong:{}, lockUntil:{},
+  team:'', opened:[], clueOrder:newClueOrder(),
+  current:null,          // { clue, qid } — 지금 풀고 있는 문제
+  wrong:0, lockUntil:0, qUsed:[],
   accuse:{ suspect:'', r1:'', r2:'', r3:'', place:'' },
   tries:0, solved:false, screen:'title'
 });
 let S = defaultState();
+
+/* 다음에 열릴 단서와, 그 단계에 맞는 난이도에서 무작위로 뽑은 문제 */
+function drawNext(){
+  if(S.current) return S.current;
+  const clue = S.clueOrder[S.opened.length];
+  if(clue == null) return null;
+  const star = S.opened.length < 4 ? 1 : (S.opened.length < 8 ? 2 : 3);
+  let pool = QBANK.filter(q => q.star === star && !S.qUsed.includes(q.id));
+  if(!pool.length) pool = QBANK.filter(q => q.star === star);          // 한 바퀴 다 돌면 재사용
+  const q = pool[Math.floor(Math.random() * pool.length)];
+  S.current = { clue, qid:q.id };
+  S.wrong = 0;
+  save();
+  return S.current;
+}
+const qById = id => QBANK.find(q => q.id === id);
 
 function load(){
   try{
@@ -633,13 +786,18 @@ function save(){
    보내기가 실패해도 게임은 그대로 진행된다 — 성공 여부를 기다리지 않는다.
    ═══════════════════════════════════════════ */
 const SYNC = String(window.SYNC_URL || '').trim();
+const strip = s => String(s).replace(/<[^>]*>/g,'').replace(/일까요\?|적어 주세요\.|\s+$/g,'').trim().slice(0,28);
 function syncUp(active){
   if(!SYNC || !S.team) return;
-  const now = Date.now();
-  const stuck = [...new Set([
-    ...Object.keys(S.wrong).filter(n => S.wrong[n] > 0),
-    ...Object.keys(S.lockUntil).filter(n => S.lockUntil[n] > now),
-  ].map(Number))].sort((a,b)=>a-b);
+  // 지금 어느 문제에서 헤매는 중인지 — 선생님 화면에 그대로 뜬다
+  let stuck = '';
+  if(S.lockUntil > Date.now()){
+    const q = qById(S.lastQid);
+    stuck = q ? `${q.id}번 ${strip(q.ask)}` : '30초 대기';
+  }else if(S.wrong > 0 && S.current){
+    const q = qById(S.current.qid);
+    stuck = q ? `${q.id}번 ${strip(q.ask)}` : '';
+  }
   const picked = SUSPECTS.find(s => s.id === S.accuse.suspect);
   try{
     fetch(SYNC, {
@@ -732,30 +890,58 @@ const lockIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
   <rect x="4" y="10" width="16" height="10" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15" r="1.4" fill="currentColor" stroke="none"/></svg>`;
 const stars = n => '★'.repeat(n) + '☆'.repeat(3-n);
 
-function isLocked(n){ return (S.lockUntil[n]||0) > Date.now(); }
-function remain(n){ return Math.max(0, Math.ceil(((S.lockUntil[n]||0) - Date.now())/1000)); }
+function isLocked(){ return S.lockUntil > Date.now(); }
+function remain(){ return Math.max(0, Math.ceil((S.lockUntil - Date.now())/1000)); }
+
+const STAGE = ['현장 살펴보기','엇갈리는 증언','결정적인 증거'];
 
 function renderBoard(){
   paintTeamChips();
+  const n = S.opened.length;
+
+  /* 다음 수사 상자 */
+  const box = document.getElementById('drawBox');
+  if(n >= POOL.length){
+    box.className = 'drawbox done';
+    box.innerHTML = `<div class="txtcol"><div class="st">수사 완료</div>
+      <h3>단서를 모두 찾았습니다</h3>
+      <p>12개 단서가 전부 열렸어요. 이제 범인을 지목해 주세요.</p></div>`;
+  }else if(isLocked()){
+    box.className = 'drawbox';
+    box.innerHTML = `<div class="txtcol"><div class="st">잠시 정리 중</div>
+        <h3>두 번 틀렸어요</h3>
+        <p>조금 쉬었다가 <b>새로운 문제</b>로 다시 도전합니다.</p></div>
+      <div class="waitbox"><span class="cd" id="drawCd">${remain()}</span><span class="lb">초</span></div>`;
+  }else{
+    const stage = STAGE[n < 4 ? 0 : (n < 8 ? 1 : 2)];
+    box.className = 'drawbox';
+    box.innerHTML = `<div class="txtcol">
+        <div class="st">${n+1}번째 단서 · ${stage}</div>
+        <h3>${S.current ? '풀던 문제가 남아 있어요' : '다음 단서를 수사할까요?'}</h3>
+        <p>문제는 <b>무작위</b>로 나옵니다. 고를 수 없어요.
+           ${n < NEED ? `범인 지목까지 <b>${NEED-n}개</b> 남았습니다.` : '이제 범인을 지목할 수 있어요.'}</p>
+      </div>
+      <button class="btn" id="drawBtn">${S.current ? '▶ 이어서 풀기' : '🔍 수사 시작'}</button>`;
+    const db = document.getElementById('drawBtn');
+    if(db) db.addEventListener('click', openQuestion);
+  }
+
+  /* 찾은 단서 + 아직 안 찾은 자리 */
   const board = document.getElementById('board');
-  board.innerHTML = CLUES.map(c=>{
-    const open = S.opened.includes(c.n);
-    const q = QUESTIONS[c.n-1];
-    if(open){
-      return `<button class="clue open" data-n="${c.n}">
-        <span class="no">${c.n}</span><span class="star">${stars(q.star)}</span>
-        <div class="thumb"><img src="${c.img}" alt="${c.title}" loading="lazy"></div>
-        <div class="cap">${c.title}</div></button>`;
-    }
-    return `<button class="clue ${isLocked(c.n)?'locked-timer':''}" data-n="${c.n}">
-      <span class="no">${c.n}</span><span class="star">${stars(q.star)}</span>
-      <div class="lockart">${lockIcon}</div>
-      <div class="cap">잠긴 단서</div>
-      ${isLocked(c.n) ? `<div class="timer" data-timer="${c.n}">${remain(c.n)}초 후 재도전</div>` : ''}
-    </button>`;
+  const found = S.opened.map((cn, i) => {
+    const c = CLUES[cn-1];
+    return `<button class="clue open" data-n="${cn}">
+      <span class="no">${i+1}</span>
+      <div class="thumb"><img src="${c.img}" alt="${c.title}" loading="lazy"></div>
+      <div class="cap">${c.title}</div></button>`;
   }).join('');
-  board.querySelectorAll('.clue').forEach(b=>{
-    b.addEventListener('click', ()=> openCard(+b.dataset.n));
+  const rest = Array.from({length: POOL.length - S.opened.length}, (_, i) =>
+    `<div class="clue"><span class="no">${S.opened.length + i + 1}</span>
+      <div class="lockart">${lockIcon}</div>
+      <div class="cap">아직 찾지 못함</div></div>`).join('');
+  board.innerHTML = found + rest;
+  board.querySelectorAll('.clue.open').forEach(b=>{
+    b.addEventListener('click', ()=> renderReveal(CLUES[+b.dataset.n - 1], false));
   });
   paintStats();
 }
@@ -763,29 +949,29 @@ function renderBoard(){
 function paintStats(){
   const n = S.opened.length;
   document.getElementById('statOpen').textContent = n;
+  document.getElementById('statTotal').textContent = POOL.length;
   document.getElementById('statTry').textContent = S.tries;
-  document.getElementById('progBar').style.width = (n/13*100) + '%';
+  document.getElementById('progBar').style.width = (n/POOL.length*100) + '%';
   const btn = document.getElementById('accuseBtn');
-  btn.disabled = n < 8;
-  btn.textContent = n < 8 ? `🔒 범인 지목 (단서 ${8-n}개 더)` : '🎯 범인 지목하기';
+  btn.disabled = n < NEED;
+  btn.textContent = n < NEED ? `🔒 범인 지목 (단서 ${NEED-n}개 더)` : '🎯 범인 지목하기';
 }
 
-/* 잠금 타이머 갱신 */
+/* 잠금 카운트다운 — 풀리는 순간 보드를 다시 그려 '수사 시작' 버튼을 돌려준다 */
+let wasLocked = false;
 setInterval(()=>{
-  let dirty = false;
-  document.querySelectorAll('[data-timer]').forEach(el=>{
-    const n = +el.dataset.timer;
-    if(isLocked(n)) el.textContent = remain(n) + '초 후 재도전';
-    else dirty = true;
-  });
-  const mt = document.getElementById('mCountdown');
-  if(mt){
-    const n = +mt.dataset.n;
-    if(isLocked(n)) mt.textContent = remain(n);
-    else openCard(n);
+  const now = isLocked();
+  if(now){
+    const a = document.getElementById('drawCd'), b = document.getElementById('mCountdown');
+    if(a) a.textContent = remain();
+    if(b) b.textContent = remain();
+  }else if(wasLocked){
+    S.lockUntil = 0; save();
+    if(document.getElementById('modal').classList.contains('on')) closeModal();
+    if(document.getElementById('s-board').classList.contains('active')) renderBoard();
   }
-  if(dirty && document.getElementById('s-board').classList.contains('active')) renderBoard();
-}, 500);
+  wasLocked = now;
+}, 400);
 
 /* ═══════════════════════════════════════════
    모달 — 문제 / 단서
@@ -796,22 +982,23 @@ document.getElementById('mClose').addEventListener('click', closeModal);
 modal.addEventListener('click', e=>{ if(e.target===modal) closeModal(); });
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
 
-function openCard(n){
-  const clue = CLUES[n-1];
+function openQuestion(){
+  if(isLocked()){ renderLock(); modal.classList.add('on'); return; }
+  const cur = drawNext();
+  if(!cur) return;
   modal.classList.add('on');
-  document.getElementById('mNo').textContent = '단서 ' + n;
-  if(S.opened.includes(n)) renderReveal(clue, false);
-  else if(isLocked(n)) renderLock(n);
-  else renderQuestion(n);
+  renderQuestion();
 }
 
-function renderLock(n){
+function renderLock(){
+  document.getElementById('mNo').textContent = '잠시 쉬기';
   document.getElementById('mTitle').textContent = '잠시 쉬어 가기';
+  const q = qById(S.current ? S.current.qid : S.lastQid);
   document.getElementById('mBody').innerHTML = `
-    <div class="lockbox">두 번 틀렸어요. 조금만 기다렸다가 다시 도전해요!
-      <span class="cd"><b id="mCountdown" data-n="${n}">${remain(n)}</b>초</span></div>
-    <div class="hintbox" style="margin-top:16px">
-      <span class="who">권범준</span> : "${QUESTIONS[n-1].hint}"</div>
+    <div class="lockbox">두 번 틀렸어요. 조금 쉬었다가 <b>새로운 문제</b>로 다시 도전합니다.
+      <span class="cd"><b id="mCountdown">${remain()}</b>초</span></div>
+    ${q ? `<div class="hintbox" style="margin-top:16px">
+      <span class="who">권범준</span> : "${q.hint}"</div>` : ''}
     <div class="mfoot"><button class="btn ghost sm" onclick="closeModal()">단서 보드로</button></div>`;
 }
 
@@ -822,15 +1009,19 @@ function normAns(v){
     .replace(/[박개]/g,'')
     .replace(/[()]/g,'');
 }
-/* 숫자는 표기를 하나로 맞춘다: '4개' '2 박' '2.0' '02' → '4' '2' '2' '2' */
+/* 숫자는 표기를 하나로 맞춘다: '4개' '2 박' '2.0' '02' '1½' → '4' '2' '2' '2' '1.5' */
 function canonAns(v){
-  const s = normAns(v);
+  const s = normAns(v)
+    .replace(/1½|1과2분의1/g,'1.5').replace(/½/g,'0.5')
+    .replace(/¼/g,'0.25').replace(/¾/g,'0.75');
   return /^-?\d+(\.\d+)?$/.test(s) ? String(parseFloat(s)) : s;
 }
 
-function renderQuestion(n){
-  const q = QUESTIONS[n-1];
-  document.getElementById('mTitle').textContent = `문제 ${q.n}  ${stars(q.star)}`;
+function renderQuestion(){
+  const q = qById(S.current.qid);
+  const step = S.opened.length + 1;
+  document.getElementById('mNo').textContent = `${step}번째 단서`;
+  document.getElementById('mTitle').textContent = `문제  ${stars(q.star)}`;
   document.getElementById('mBody').innerHTML = `
     <div class="qexpr">${q.expr}</div>
     <div class="qask">${q.ask}</div>
@@ -842,49 +1033,55 @@ function renderQuestion(n){
     <div class="feedback" id="fb"></div>
     <div id="hintSlot"></div>`;
   const input = document.getElementById('ansInput');
-  document.getElementById('ansBtn').addEventListener('click', ()=>checkAnswer(n));
-  input.addEventListener('keydown', e=>{ if(e.key==='Enter') checkAnswer(n); });
-  if((S.wrong[n]||0) >= 1) showHint(n);
+  document.getElementById('ansBtn').addEventListener('click', checkAnswer);
+  input.addEventListener('keydown', e=>{ if(e.key==='Enter') checkAnswer(); });
+  if(S.wrong >= 1) showHint();
   setTimeout(()=>input.focus(), 80);
 }
 
-function showHint(n){
+function showHint(){
   const slot = document.getElementById('hintSlot');
   if(slot && !slot.innerHTML){
-    slot.innerHTML = `<div class="hintbox"><span class="who">권범준</span> : "${QUESTIONS[n-1].hint}"</div>`;
+    slot.innerHTML = `<div class="hintbox"><span class="who">권범준</span> : "${qById(S.current.qid).hint}"</div>`;
   }
 }
 
-function checkAnswer(n){
-  const q = QUESTIONS[n-1];
+function checkAnswer(){
+  if(!S.current || isLocked()) return;
+  const q = qById(S.current.qid);
   const raw = document.getElementById('ansInput').value;
   if(!raw.trim()) return;
-  const ok = q.key.includes(h53(canonAns(raw), saltFor(q.n)));
+  const ok = q.key.includes(h53(canonAns(raw), saltFor(q.id)));
 
   if(ok){
+    const n = S.current.clue;
     if(!S.opened.includes(n)) S.opened.push(n);
-    S.opened.sort((a,b)=>a-b);
-    delete S.wrong[n]; delete S.lockUntil[n];
+    if(!S.qUsed.includes(q.id)) S.qUsed.push(q.id);
+    S.current = null; S.wrong = 0; S.lockUntil = 0;
     save(); syncUp(true); renderBoard();
     renderReveal(CLUES[n-1], true);
     return;
   }
 
-  S.wrong[n] = (S.wrong[n]||0) + 1;
+  S.wrong++;
   const fb = document.getElementById('fb');
   fb.className = 'feedback bad';
-  if(S.wrong[n] === 1){
+  if(S.wrong === 1){
     fb.textContent = '아쉬워요! 힌트를 보고 다시 도전해 보세요.';
-    showHint(n); save(); syncUp(true);
+    showHint(); save(); syncUp(true);
   }else{
-    S.lockUntil[n] = Date.now() + 30000;
-    S.wrong[n] = 0;
-    save(); syncUp(true); renderBoard(); renderLock(n);
+    // 두 번 틀리면 30초 쉬고, 같은 문제 대신 새 문제를 받는다 (한 문제에 갇히지 않도록)
+    S.lockUntil = Date.now() + 30000;
+    if(!S.qUsed.includes(q.id)) S.qUsed.push(q.id);
+    S.lastQid = q.id; S.current = null; S.wrong = 0;
+    save(); syncUp(true); renderBoard(); renderLock();
   }
 }
 
 function renderReveal(clue, isNew){
   const d = DETECTIVES[clue.who];
+  modal.classList.add('on');
+  document.getElementById('mNo').textContent = '단서 ' + (S.opened.indexOf(clue.n) + 1);
   document.getElementById('mTitle').textContent = (isNew ? '단서 획득! · ' : '') + clue.title;
   document.getElementById('mBody').innerHTML = `
     <div class="reveal">
@@ -944,6 +1141,8 @@ document.getElementById('submitBtn').addEventListener('click', ()=>{
 /* ═══════════════════════════════════════════
    결과
    ═══════════════════════════════════════════ */
+const esc0 = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
 function matched(list){
   const hay = [S.accuse.r1, S.accuse.r2, S.accuse.r3, S.accuse.place].join(' ').toLowerCase();
   return list.filter(k => k.words.some(w => hay.includes(w.toLowerCase()))).map(k=>k.label);
@@ -959,13 +1158,11 @@ function renderResult(correct){
     card.innerHTML = `
       <div class="rhead"><span class="badge">수사 계속</span>
         <h2>아직 단서가 부족해!</h2>
-        <p>${S.team} · 지목 시도 ${S.tries}회 · 연 단서 ${S.opened.length}/13</p></div>
+        <p>${esc0(S.team)} · 지목 시도 ${S.tries}회 · 연 단서 ${S.opened.length}/${POOL.length}</p></div>
       <div class="rbody"><div class="failbox">
         <div class="em">🔍</div>
         <h2>${picked ? picked.name : '용의자'}… 정말일까?</h2>
-        <p>전소민: "잠깐, 다시 생각해 보자.<br>
-        <b>창문은 어느 쪽에서만 열릴까? 발자국 크기는 몇 cm였지?</b><br>
-        단서를 더 열어서 확인해 보자!"</p>
+        <p>${REBUT[S.accuse.suspect] || '전소민: "잠깐, 다시 생각해 보자."'}</p>
       </div></div>`;
     acts.innerHTML = `<button class="btn" id="againBtn">🗂 단서 보드로 돌아가기</button>`;
     document.getElementById('againBtn').onclick = ()=>{ renderBoard(); show('board'); };
@@ -975,14 +1172,19 @@ function renderResult(correct){
   const keys = matched(KEY_CLUE_WORDS);
   const decoys = matched(DECOY_WORDS);
   const placeOK = /피아노/.test(S.accuse.place) && /(밑|아래|상자)/.test(S.accuse.place);
-  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const esc = esc0;
 
   card.innerHTML = `
     <div class="rhead"><span class="badge">사건 해결</span>
       <h2>🎉 범인은 음악실 고양이 ‘쉼표’!</h2>
-      <p>${esc(S.team)} · 연 단서 ${S.opened.length}/13 · 지목 시도 ${S.tries}회</p></div>
+      <p>${esc(S.team)} · 연 단서 ${S.opened.length}/${POOL.length} · 지목 시도 ${S.tries}회</p></div>
     <div class="rbody">
       <div class="endart"><img src="img/scene_3.webp" alt="피아노 밑 상자에서 악보를 발견한 장면" loading="lazy"></div>
+      <div class="finale">
+        <img src="${FINALE.img}" alt="${FINALE.title}" loading="lazy">
+        <div class="ftx"><div class="fh">🔑 마지막 단서 · ${FINALE.title}</div>
+          <div class="fd">${FINALE.text}</div></div>
+      </div>
       <div class="script">
         ${ENDING.map(e=>{
           const d = DETECTIVES[e.who] || { ini:e.who[0], color:'#8A7A4E' };
