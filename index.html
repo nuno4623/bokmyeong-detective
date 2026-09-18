@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>복명초 탐정단: 사라진 발표회 악보</title>
+<meta name="description" content="6학년 음악 · 음표와 쉼표의 길이 + 바장조 복습 추리 게임">
+<meta name="theme-color" content="#4C5A78">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234C5A78'/%3E%3Ccircle cx='13' cy='13' r='7' fill='none' stroke='%23EDE28E' stroke-width='2.6'/%3E%3Cline x1='18' y1='18' x2='26' y2='26' stroke='%23EDE28E' stroke-width='3' stroke-linecap='round'/%3E%3Cellipse cx='11' cy='16' rx='3.4' ry='2.6' fill='%23EDE28E'/%3E%3Cline x1='14.2' y1='15.4' x2='14.2' y2='7' stroke='%23EDE28E' stroke-width='1.8'/%3E%3C/svg%3E">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root{
+    --blue:#4C5A78; --blue-deep:#3A465E; --blue-soft:#E6EAF2; --blue-line:#C6CEDF;
+    --lemon:#EDE28E; --lemon-deep:#D9C95F;
+    --cream:#FDFDFE; --ink:#2B3242; --dim:#7A8296;
+    --bg:#F4F6FA; --ok:#3F9A6E; --no:#D9605B;
+    --shadow:0 4px 14px rgba(43,50,66,.10);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    background:var(--bg); color:var(--ink); -webkit-text-size-adjust:100%;
+  }
+  img{max-width:100%; display:block}
+  button{font-family:inherit; cursor:pointer; border:none}
+
+  /* ── 공통 레이아웃 ── */
+  .wrap{max-width:1180px; margin:0 auto; padding:18px 20px 40px}
+  .screen{display:none}
+  .screen.active{display:block; animation:fade .28s ease}
+  @keyframes fade{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none}}
+
+  .btn{
+    display:inline-flex; align-items:center; gap:8px; justify-content:center;
+    font-size:17px; font-weight:800; padding:14px 30px; border-radius:999px;
+    background:var(--lemon); color:var(--blue-deep); box-shadow:var(--shadow);
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .btn:hover{transform:translateY(-2px); box-shadow:0 7px 18px rgba(43,50,66,.18)}
+  .btn:active{transform:translateY(0)}
+  .btn.solid{background:var(--blue); color:#fff}
+  .btn.ghost{background:var(--cream); color:var(--blue); box-shadow:inset 0 0 0 3px var(--blue)}
+  .btn:disabled{background:#DDE2EC; color:#A3AAB9; box-shadow:none; cursor:not-allowed; transform:none}
+  .btn.sm{font-size:14px; padding:9px 18px}
+
+  /* ── 타이틀 ── */
+  #s-title{display:none}
+  #s-title.active{display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-height:100vh; padding:24px; text-align:center;
+    background:linear-gradient(160deg,#4C5A78 0%, #34405A 100%)}
+  #s-title .titleart{width:min(780px,92vw); border-radius:22px; overflow:hidden;
+    box-shadow:0 18px 48px rgba(0,0,0,.35); border:4px solid rgba(237,226,142,.5)}
+  #s-title h1{color:#fff; font-size:clamp(28px,4.2vw,46px); font-weight:800; letter-spacing:-.03em; margin-top:26px}
+  #s-title h1 em{font-style:normal; color:var(--lemon); display:block; font-size:.62em; margin-top:8px; letter-spacing:-.01em}
+  #s-title p{color:#C9D2E4; font-size:15px; font-weight:600; margin-top:14px; line-height:1.7}
+  #s-title .btn{margin-top:28px; font-size:19px; padding:16px 44px}
+
+  /* ── 헤더(보드용) ── */
+  .topbar{background:var(--blue); color:#fff; box-shadow:var(--shadow)}
+  .topbar .inner{max-width:1180px; margin:0 auto; padding:12px 20px;
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap}
+  .topbar .logo{font-size:17px; font-weight:800; letter-spacing:-.02em; display:flex; align-items:center; gap:8px}
+  .topbar .teamchip{background:var(--lemon); color:var(--blue-deep); font-size:13px; font-weight:800;
+    padding:5px 14px; border-radius:999px}
+  .topbar .spacer{flex:1}
+  .topbar .stat{font-size:13px; font-weight:700; color:#D6DCEA}
+  .topbar .stat b{color:var(--lemon); font-size:15px}
+  .topbar .mini{background:rgba(255,255,255,.14); color:#fff; font-size:12px; font-weight:700;
+    padding:7px 14px; border-radius:999px}
+  .topbar .mini:hover{background:rgba(255,255,255,.26)}
+
+  /* ── 카드/패널 공통 ── */
+  .panel{background:var(--cream); border:2px solid var(--blue-line); border-radius:18px;
+    padding:22px 24px; box-shadow:var(--shadow)}
+  .h2{font-size:20px; font-weight:800; color:var(--blue); display:flex; align-items:center;
+    gap:10px; margin-bottom:6px; letter-spacing:-.02em}
+  .h2 .tag{background:var(--lemon); color:var(--blue-deep); font-size:12px; padding:4px 12px; border-radius:999px}
+  .sub{font-size:14px; color:var(--dim); font-weight:600; line-height:1.7}
+
+  /* ── 모둠명 입력 ── */
+  #s-name .box{max-width:560px; margin:8vh auto 0; text-align:center}
+  #s-name input{width:100%; margin-top:20px; padding:16px 18px; font-family:inherit;
+    font-size:22px; font-weight:800; text-align:center; color:var(--blue);
+    border:3px solid var(--blue-line); border-radius:14px; background:#fff}
+  #s-name input:focus{outline:none; border-color:var(--blue)}
+  #s-name .btn{margin-top:22px}
+  #nameMsg{min-height:1.4em; margin-top:10px; font-size:13px; font-weight:700; color:var(--no)}
+
+  /* ── 스토리 컷 ── */
+  .cut{max-width:900px; margin:4vh auto 0}
+  .cut .art{border-radius:18px; overflow:hidden; border:3px solid var(--blue);
+    box-shadow:0 10px 30px rgba(43,50,66,.18); background:var(--blue-soft)}
+  .cut .art img{width:100%; aspect-ratio:16/9; object-fit:cover}
+  .cut .art.portrait img{aspect-ratio:16/9; object-fit:contain; background:var(--blue)}
+  .cut .narr{background:var(--cream); border:2px solid var(--blue-line); border-top:none;
+    border-radius:0 0 18px 18px; padding:20px 24px; font-size:17px; line-height:1.85; font-weight:600}
+  .cut .narr b{color:var(--blue); font-weight:800}
+  .cut .nav{display:flex; justify-content:center; gap:12px; margin-top:22px; flex-wrap:wrap}
+  .cutdots{display:flex; justify-content:center; gap:7px; margin-top:16px}
+  .cutdots i{width:9px; height:9px; border-radius:50%; background:var(--blue-line)}
+  .cutdots i.on{background:var(--lemon); box-shadow:0 0 0 3px rgba(237,226,142,.35)}
+
+  /* ── 탐정단 소개 ── */
+  .teamart{border-radius:18px; overflow:hidden; border:3px solid var(--blue); box-shadow:var(--shadow)}
+  .teamart img{width:100%; aspect-ratio:16/9; object-fit:cover}
+  .members{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-top:18px}
+  @media (max-width:820px){ .members{grid-template-columns:repeat(2,1fr)} }
+  .member{background:var(--cream); border:2px solid var(--blue-line); border-radius:16px;
+    padding:16px 16px 18px; box-shadow:var(--shadow)}
+  .member .nm{font-size:18px; font-weight:800; color:var(--blue); display:flex; align-items:center; gap:8px}
+  .member .nm .ini{width:30px; height:30px; border-radius:50%; display:grid; place-items:center;
+    font-size:14px; font-weight:800; color:#fff; flex-shrink:0}
+  .member .role{font-size:12px; font-weight:800; color:var(--blue-deep); background:var(--lemon);
+    display:inline-block; padding:3px 10px; border-radius:999px; margin-top:10px}
+  .member .say{font-size:13.5px; color:var(--dim); font-weight:600; margin-top:10px; line-height:1.65}
+
+  /* ── 단서 보드 ── */
+  .boardhead{display:flex; align-items:flex-end; gap:16px; flex-wrap:wrap; margin:16px 0 14px}
+  .boardhead .spacer{flex:1}
+  .progress{width:100%; height:12px; background:var(--blue-soft); border-radius:999px;
+    overflow:hidden; border:1.5px solid var(--blue-line); margin-top:12px}
+  .progress i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--lemon),var(--lemon-deep));
+    transition:width .5s ease}
+
+  .board{display:grid; grid-template-columns:repeat(auto-fill,minmax(196px,1fr)); gap:14px; margin-top:18px}
+  .clue{position:relative; background:var(--cream); border:2px solid var(--blue-line);
+    border-radius:16px; padding:14px; text-align:left; box-shadow:var(--shadow);
+    transition:transform .14s ease, border-color .14s ease; display:flex; flex-direction:column; gap:8px;
+    min-height:184px; color:inherit; width:100%}
+  .clue:hover{transform:translateY(-3px); border-color:var(--blue)}
+  .clue .no{position:absolute; top:10px; left:10px; background:var(--blue); color:#fff;
+    width:26px; height:26px; border-radius:50%; display:grid; place-items:center; font-size:12px; font-weight:800}
+  .clue .star{position:absolute; top:12px; right:12px; font-size:11px; color:var(--lemon-deep); font-weight:800}
+  .clue .lockart{flex:1; display:grid; place-items:center; color:var(--blue-line)}
+  .clue .lockart svg{width:54px; height:54px}
+  .clue .cap{font-size:13.5px; font-weight:800; color:var(--dim); text-align:center}
+  .clue.open{border-color:var(--lemon-deep); background:#FFFDF2}
+  .clue.open .cap{color:var(--blue)}
+  .clue.open .thumb{flex:1; display:grid; place-items:center; padding:4px}
+  .clue.open .thumb img{max-height:104px; width:auto; object-fit:contain}
+  .clue.locked-timer{border-color:var(--no); background:#FCF0EF}
+  .clue .timer{font-size:12px; font-weight:800; color:var(--no); text-align:center}
+
+  /* ── 모달 ── */
+  .modal{position:fixed; inset:0; background:rgba(43,50,66,.62); display:none;
+    align-items:center; justify-content:center; padding:20px; z-index:50}
+  .modal.on{display:flex}
+  .modal .sheet{background:var(--cream); border-radius:20px; width:min(660px,100%);
+    max-height:92vh; overflow:auto; box-shadow:0 22px 60px rgba(0,0,0,.35)}
+  .modal .mhead{background:var(--blue); color:#fff; padding:16px 22px; display:flex;
+    align-items:center; gap:10px; position:sticky; top:0; z-index:2}
+  .modal .mhead .no{background:var(--lemon); color:var(--blue-deep); font-size:12px;
+    font-weight:800; padding:4px 12px; border-radius:999px}
+  .modal .mhead h3{font-size:17px; font-weight:800; flex:1; letter-spacing:-.02em}
+  .modal .mhead .x{background:rgba(255,255,255,.16); color:#fff; width:32px; height:32px;
+    border-radius:50%; font-size:17px; font-weight:800; line-height:1}
+  .modal .mbody{padding:22px}
+
+  .qexpr{display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:wrap;
+    background:var(--blue-soft); border:2px solid var(--blue-line); border-radius:14px;
+    padding:20px 16px; font-size:22px; font-weight:800; color:var(--blue); line-height:1.5; text-align:center}
+  .qexpr .op{font-size:24px; margin:0 2px}
+  .qexpr .txt{font-size:19px}
+  .note{display:inline-block; vertical-align:middle}
+  .qask{font-size:16px; font-weight:800; color:var(--blue); text-align:center; margin-top:14px}
+  .ansrow{display:flex; align-items:center; justify-content:center; gap:10px; margin-top:16px; flex-wrap:wrap}
+  .ansrow input{width:190px; padding:13px 14px; font-family:inherit; font-size:20px; font-weight:800;
+    text-align:center; color:var(--blue); border:3px solid var(--blue-line); border-radius:12px; background:#fff}
+  .ansrow input:focus{outline:none; border-color:var(--blue)}
+  .ansrow .unit{font-size:15px; font-weight:800; color:var(--dim)}
+  .feedback{margin-top:14px; min-height:1.5em; font-size:14.5px; font-weight:700; text-align:center; line-height:1.7}
+  .feedback.bad{color:var(--no)}
+  .feedback.good{color:var(--ok)}
+  .hintbox{margin-top:14px; background:#FFFBEA; border:2px dashed var(--lemon-deep);
+    border-radius:12px; padding:14px 16px; font-size:14px; font-weight:700; color:var(--blue-deep); line-height:1.7}
+  .hintbox .who{color:var(--blue); font-weight:800}
+  .lockbox{margin-top:16px; text-align:center; background:#FCF0EF; border:2px solid #F0C9C7;
+    border-radius:12px; padding:18px; font-size:15px; font-weight:800; color:var(--no)}
+  .lockbox .cd{font-size:30px; display:block; margin-top:6px}
+
+  /* 단서 공개 */
+  .reveal{text-align:center}
+  .reveal .art{background:var(--blue-soft); border:2px solid var(--blue-line); border-radius:16px;
+    padding:16px; display:grid; place-items:center}
+  .reveal .art img{max-height:220px; width:auto}
+  .reveal .ct{font-size:19px; font-weight:800; color:var(--blue); margin-top:16px}
+  .reveal .cdesc{font-size:15px; font-weight:600; line-height:1.85; margin-top:10px; text-align:left;
+    background:var(--cream); border:2px solid var(--blue-line); border-radius:12px; padding:14px 16px}
+  .reveal .cdesc b{color:var(--blue); font-weight:800; background:linear-gradient(transparent 60%, #F4EDB8 60%)}
+  .say-line{display:flex; gap:10px; align-items:flex-start; margin-top:14px; text-align:left;
+    background:#FFFDF2; border:2px solid var(--lemon-deep); border-radius:12px; padding:12px 14px}
+  .say-line .ini{width:32px; height:32px; border-radius:50%; display:grid; place-items:center;
+    font-size:13px; font-weight:800; color:#fff; flex-shrink:0}
+  .say-line .tx{font-size:14.5px; font-weight:700; line-height:1.65}
+  .say-line .tx .nm{color:var(--blue); font-weight:800; display:block; font-size:12.5px; margin-bottom:3px}
+  .mfoot{display:flex; justify-content:center; gap:10px; margin-top:20px; flex-wrap:wrap}
+
+  /* ── 지목 화면 ── */
+  .suspects{display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-top:16px}
+  @media (max-width:860px){ .suspects{grid-template-columns:repeat(3,1fr)} }
+  .sus{background:var(--cream); border:3px solid var(--blue-line); border-radius:16px; padding:10px;
+    text-align:center; transition:transform .14s ease, border-color .14s ease; box-shadow:var(--shadow)}
+  .sus:hover{transform:translateY(-3px)}
+  .sus img{width:100%; aspect-ratio:1/1; object-fit:cover; border-radius:11px}
+  .sus .nm{font-size:15px; font-weight:800; color:var(--blue); margin-top:9px}
+  .sus .rl{font-size:11.5px; font-weight:700; color:var(--dim); margin-top:3px; line-height:1.5}
+  .sus.sel{border-color:var(--lemon-deep); background:#FFFDF2}
+  .sus.sel .nm::after{content:" ✔"; color:var(--ok)}
+
+  .reasons{display:grid; gap:10px; margin-top:14px}
+  .reasons textarea{width:100%; min-height:62px; padding:12px 14px; font-family:inherit; font-size:15px;
+    border:2px solid var(--blue-line); border-radius:12px; background:#fff; resize:vertical; line-height:1.7}
+  .reasons textarea:focus{outline:none; border-color:var(--blue)}
+  .rlabel{font-size:13px; font-weight:800; color:var(--blue); margin-bottom:5px; display:block}
+  .placerow input{width:100%; padding:13px 14px; font-family:inherit; font-size:16px; font-weight:700;
+    border:2px solid var(--blue-line); border-radius:12px; background:#fff}
+  .placerow input:focus{outline:none; border-color:var(--blue)}
+  #accuseMsg{min-height:1.5em; margin-top:12px; font-size:14px; font-weight:800; color:var(--no); text-align:center}
+
+  /* ── 결과 ── */
+  #resultCard{background:var(--cream); border:3px solid var(--blue); border-radius:20px; overflow:hidden}
+  #resultCard .rhead{background:var(--blue); color:#fff; padding:18px 24px}
+  #resultCard .rhead .badge{display:inline-block; background:var(--lemon); color:var(--blue-deep);
+    font-size:12px; font-weight:800; padding:4px 13px; border-radius:999px; margin-bottom:8px}
+  #resultCard .rhead h2{font-size:23px; font-weight:800; letter-spacing:-.02em}
+  #resultCard .rhead p{font-size:13.5px; color:#D6DCEA; font-weight:700; margin-top:6px}
+  #resultCard .rbody{padding:20px 24px 24px}
+  .endart{border-radius:14px; overflow:hidden; border:2px solid var(--blue-line)}
+  .endart img{width:100%; aspect-ratio:16/9; object-fit:cover}
+  .script{margin-top:16px; display:grid; gap:9px}
+  .script .ln{display:flex; gap:10px; align-items:flex-start; background:#fff;
+    border:2px solid var(--blue-line); border-radius:12px; padding:11px 13px}
+  .script .ln .ini{width:30px; height:30px; border-radius:50%; display:grid; place-items:center;
+    font-size:12.5px; font-weight:800; color:#fff; flex-shrink:0}
+  .script .ln .tx{font-size:14.5px; font-weight:700; line-height:1.65}
+  .script .ln .tx .nm{color:var(--blue); font-weight:800; display:block; font-size:12px; margin-bottom:3px}
+  .answerbox{margin-top:18px; background:var(--blue-soft); border:2px solid var(--blue-line);
+    border-radius:14px; padding:16px 18px}
+  .answerbox h4{font-size:14px; font-weight:800; color:var(--blue); margin-bottom:9px}
+  .answerbox .kv{font-size:14.5px; font-weight:700; line-height:1.85}
+  .answerbox .kv span{color:var(--dim); font-weight:800; display:inline-block; min-width:78px}
+  .answerbox ol{margin:6px 0 0 20px; font-size:14.5px; font-weight:700; line-height:1.8}
+  .statsrow{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px}
+  .stat-pill{background:var(--lemon); color:var(--blue-deep); font-size:13px; font-weight:800;
+    padding:7px 15px; border-radius:999px}
+  .teachernote{margin-top:12px; font-size:12.5px; font-weight:700; color:var(--dim);
+    border-top:1.5px dashed var(--blue-line); padding-top:10px; line-height:1.7}
+  .failbox{text-align:center; padding:26px 20px}
+  .failbox .em{font-size:52px}
+  .failbox h2{font-size:24px; font-weight:800; color:var(--blue); margin-top:10px}
+  .failbox p{font-size:15px; font-weight:700; color:var(--dim); margin-top:12px; line-height:1.8}
+  .actions{display:flex; justify-content:center; gap:12px; margin-top:22px; flex-wrap:wrap}
+  #saveMsg{text-align:center; font-size:13px; font-weight:700; color:var(--dim); margin-top:12px; min-height:1.4em}
+
+  @media (max-width:640px){
+    .wrap{padding:14px 14px 32px}
+    .panel{padding:18px 16px}
+    .board{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════ 1. 타이틀 ══════════ -->
+<section id="s-title" class="screen">
+  <div class="titleart"><img src="img/title.webp" alt="복명초 탐정단 엠블럼"></div>
+  <h1>복명초 탐정단<em>사라진 발표회 악보</em></h1>
+  <p>6학년 음악 · 음표와 쉼표의 길이 + 바장조<br>음악 문제를 풀어 단서를 열고, 범인을 찾아라!</p>
+  <button class="btn" id="startBtn">🔍 수사 시작</button>
+</section>
+
+<!-- ══════════ 2. 모둠명 ══════════ -->
+<section id="s-name" class="screen">
+  <div class="wrap">
+    <div class="box panel">
+      <div class="h2" style="justify-content:center"><span class="tag">STEP 1</span>탐정단 등록</div>
+      <p class="sub" style="margin-top:8px">우리 모둠의 이름을 지어 주세요.<br>이 이름으로 수사 기록이 저장됩니다.</p>
+      <input id="teamInput" maxlength="20" placeholder="예) 1모둠 셜록팀" autocomplete="off">
+      <div id="nameMsg"></div>
+      <button class="btn solid" id="nameBtn">등록하고 사건 파일 열기 →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 3. 스토리 컷 ══════════ -->
+<section id="s-story" class="screen">
+  <div class="wrap">
+    <div class="cut">
+      <div class="art" id="cutArt"><img id="cutImg" src="" alt="" loading="lazy"></div>
+      <div class="narr" id="cutNarr"></div>
+      <div class="cutdots" id="cutDots"></div>
+      <div class="nav">
+        <button class="btn ghost sm" id="cutPrev">← 이전</button>
+        <button class="btn" id="cutNext">다음 →</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 4. 탐정단 소개 ══════════ -->
+<section id="s-team" class="screen">
+  <div class="wrap">
+    <div class="h2"><span class="tag">STEP 2</span>복명초 탐정단</div>
+    <p class="sub" style="margin-bottom:16px">사건을 맡은 네 명의 탐정이에요. 각자 잘하는 게 달라요.</p>
+    <div class="teamart"><img src="img/team.webp" alt="복명초 탐정단 네 명" loading="lazy"></div>
+    <div class="members" id="memberList"></div>
+    <div style="text-align:center; margin-top:24px">
+      <button class="btn" id="toBoardBtn">🗂 단서 보드로 가기</button>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 5. 단서 보드 ══════════ -->
+<section id="s-board" class="screen">
+  <div class="topbar">
+    <div class="inner">
+      <div class="logo">🔍 복명초 탐정단</div>
+      <span class="teamchip" id="chipTeam">모둠</span>
+      <div class="spacer"></div>
+      <div class="stat">연 단서 <b id="statOpen">0</b> / 13</div>
+      <div class="stat">지목 시도 <b id="statTry">0</b>회</div>
+      <button class="mini" id="resetBtn">처음부터</button>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="boardhead">
+      <div style="flex:1; min-width:260px">
+        <div class="h2"><span class="tag">STEP 3</span>단서 보드</div>
+        <p class="sub">잠긴 카드를 누르면 음악 문제가 나와요. 정답을 맞히면 단서가 열립니다.<br>
+          단서를 <b>8개 이상</b> 열면 범인을 지목할 수 있어요.</p>
+        <div class="progress"><i id="progBar"></i></div>
+      </div>
+      <button class="btn" id="accuseBtn" disabled>🎯 범인 지목하기</button>
+    </div>
+    <div class="board" id="board"></div>
+  </div>
+</section>
+
+<!-- ══════════ 6. 범인 지목 ══════════ -->
+<section id="s-accuse" class="screen">
+  <div class="topbar">
+    <div class="inner">
+      <div class="logo">🎯 범인 지목</div>
+      <span class="teamchip" id="chipTeam2">모둠</span>
+      <div class="spacer"></div>
+      <button class="mini" id="backBoardBtn">← 단서 보드</button>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="panel">
+      <div class="h2"><span class="tag">STEP 4</span>범인은 누구일까?</div>
+      <p class="sub">용의자 한 명을 고르고, 그렇게 생각한 <b>근거 3가지</b>와 <b>악보가 있는 곳</b>을 적어 주세요.</p>
+      <div class="suspects" id="suspectList"></div>
+    </div>
+
+    <div class="panel" style="margin-top:16px">
+      <div class="h2"><span class="tag">근거</span>왜 그렇게 생각했나요?</div>
+      <div class="reasons">
+        <div><label class="rlabel" for="r1">근거 ①</label><textarea id="r1" placeholder="예) 창틀 발자국이 5cm밖에 안 돼서 사람 발이 아니다."></textarea></div>
+        <div><label class="rlabel" for="r2">근거 ②</label><textarea id="r2" placeholder="예) 케이스 잠금쇠에 회색 털이 붙어 있었다."></textarea></div>
+        <div><label class="rlabel" for="r3">근거 ③</label><textarea id="r3" placeholder="예) 급식실 아주머니가 7시 반에 종이를 문 회색 고양이를 봤다."></textarea></div>
+      </div>
+    </div>
+
+    <div class="panel placerow" style="margin-top:16px">
+      <div class="h2"><span class="tag">추리</span>악보는 어디에 있을까?</div>
+      <input id="place" maxlength="60" placeholder="예) 피아노 밑 상자 안" autocomplete="off">
+    </div>
+
+    <div id="accuseMsg"></div>
+    <div style="text-align:center; margin-top:6px">
+      <button class="btn" id="submitBtn">📨 수사 결과 제출</button>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 7. 결과 ══════════ -->
+<section id="s-result" class="screen">
+  <div class="wrap">
+    <div id="resultCard"></div>
+    <div class="actions" id="resultActions"></div>
+    <div id="saveMsg"></div>
+  </div>
+</section>
+
+<!-- ══════════ 모달 ══════════ -->
+<div class="modal" id="modal">
+  <div class="sheet">
+    <div class="mhead">
+      <span class="no" id="mNo">단서 1</span>
+      <h3 id="mTitle">문제</h3>
+      <button class="x" id="mClose" aria-label="닫기">✕</button>
+    </div>
+    <div class="mbody" id="mBody"></div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════
+   음표/쉼표 SVG — 음표길이 워크시트에서 그대로 가져옴
+   ═══════════════════════════════════════════ */
+const B='#2B3242';
+function head(x,y,filled){ return `<ellipse cx="${x}" cy="${y}" rx="7" ry="5" transform="rotate(-20 ${x} ${y})" fill="${filled?B:'none'}" stroke="${B}" stroke-width="2"/>`; }
+function stem(x,y){ return `<line x1="${x+6}" y1="${y-1}" x2="${x+6}" y2="${y-26}" stroke="${B}" stroke-width="2"/>`; }
+function flag(x,y,n){ let s=''; for(let i=0;i<n;i++){ const t=y-26+i*7; s+=`<path d="M${x+6},${t} q10,4 8,16" fill="none" stroke="${B}" stroke-width="2.5"/>`; } return s; }
+function dot(x,y){ return `<circle cx="${x+13}" cy="${y-1}" r="2.2" fill="${B}"/>`; }
+function noteSVG(type){
+  const x=12,y=34; let g='';
+  switch(type){
+    case 'w':  g=head(x,y,false); break;
+    case 'h':  g=head(x,y,false)+stem(x,y); break;
+    case 'hd': g=head(x,y,false)+stem(x,y)+dot(x,y); break;
+    case 'q':  g=head(x,y,true)+stem(x,y); break;
+    case 'qd': g=head(x,y,true)+stem(x,y)+dot(x,y); break;
+    case 'e':  g=head(x,y,true)+stem(x,y)+flag(x,y,1); break;
+    case 's':  g=head(x,y,true)+stem(x,y)+flag(x,y,2); break;
+  }
+  return `<svg class="note" width="34" height="42" viewBox="0 0 34 42">${g}</svg>`;
+}
+function restSVG(type){
+  const L=`<line x1="2" y1="20" x2="32" y2="20" stroke="#B5BDCF" stroke-width="1.5"/>`;
+  let g='';
+  switch(type){
+    case 'w': g=`<rect x="11" y="20" width="12" height="5" fill="${B}"/>`; break;
+    case 'h': g=`<rect x="11" y="15" width="12" height="5" fill="${B}"/>`; break;
+    case 'hd': g=`<rect x="9" y="15" width="12" height="5" fill="${B}"/><circle cx="26" cy="17" r="2.2" fill="${B}"/>`; break;
+    case 'q': g=`<path d="M14,8 l6,7 l-5,6 l6,8 q-6,-3 -6,2" fill="none" stroke="${B}" stroke-width="2.5" stroke-linejoin="round"/>`; break;
+    case 'qd': g=`<path d="M12,8 l6,7 l-5,6 l6,8 q-6,-3 -6,2" fill="none" stroke="${B}" stroke-width="2.5" stroke-linejoin="round"/><circle cx="25" cy="18" r="2.2" fill="${B}"/>`; break;
+    case 'e': g=`<circle cx="13" cy="14" r="2.5" fill="${B}"/><path d="M13,14 q6,3 9,-1 l-5,17" fill="none" stroke="${B}" stroke-width="2.2"/>`; break;
+    case 's': g=`<circle cx="13" cy="9" r="2.6" fill="${B}"/><circle cx="11" cy="17" r="2.6" fill="${B}"/><path d="M13,9 q7,3 10,-1 l-9,28 M11,17 q7,3 10,-1" fill="none" stroke="${B}" stroke-width="2.2"/>`; break;
+  }
+  return `<svg class="note" width="34" height="42" viewBox="0 0 34 42">${L}${g}</svg>`;
+}
+
+/* ═══════════════════════════════════════════
+   데이터
+   ═══════════════════════════════════════════ */
+const DETECTIVES = {
+  '전소민': { ini:'소', color:'#4C5A78', role:'단장 · 추리 정리', say:'"자, 지금까지 단서를 정리해 보자."', trait:'침착함' },
+  '김서준': { ini:'서', color:'#6E7FA6', role:'현장 조사',        say:'"여기 뭔가 이상한데?"',            trait:'행동파' },
+  '이승하': { ini:'승', color:'#8A7A4E', role:'기록 · 알리바이',   say:'"시간이 안 맞아."',                trait:'꼼꼼함' },
+  '권범준': { ini:'범', color:'#5A7A6B', role:'음악 이론',         say:'"이건 박자로 풀 수 있어."',        trait:'문제 해결' },
+};
+
+const SUSPECTS = [
+  { id:'kang',  img:'img/suspect_1.webp', name:'강지휘 선생님', role:'6학년 음악 지휘<br>완벽주의' },
+  { id:'dore',  img:'img/suspect_2.webp', name:'도레미',       role:'6학년 피아노 반주자<br>실력파' },
+  { id:'bajo',  img:'img/suspect_3.webp', name:'바장조',       role:'6학년 리코더 파트장<br>이름부터 수상' },
+  { id:'mudae', img:'img/suspect_4.webp', name:'무대열',       role:'무대 담당 · 조명 음향<br>밤늦게까지 남음' },
+  { id:'swim',  img:'img/suspect_5.webp', name:'쉼표',         role:'음악실 고양이<br>종이를 좋아함' },
+];
+const CULPRIT = 'swim';
+
+const STORY = [
+  { img:'img/scene_2.webp',
+    text:'내일은 복명초 <b>학예회</b>. 6학년이 「오늘은 내가 주인공」을 합창하기로 했다.' },
+  { img:'img/scene_1.webp',
+    text:'그런데 아침에 음악실에 가 보니 <b>지휘자용 악보가 사라졌다.</b><br>악보 케이스는 열려 있고, 창문은 조금 열려 있고, 피아노 위엔 리코더 하나가 굴러다닌다.' },
+  { img:'img/suspect_1.webp', portrait:true,
+    text:'강지휘 선생님은 복명초 탐정단에게 사건을 의뢰한다.<br>단서는 잠겨 있다 — <b>음악 문제를 풀어야 하나씩 열린다.</b>' },
+];
+
+/* 문제 13개 — 기획서 §5 그대로.
+   정답은 소스에 글자 그대로 두지 않는다. 문제마다 다른 소금값을 섞은 해시(key)만 저장하고,
+   학생이 적은 답을 같은 방식으로 해시해서 맞춰 본다. 소스를 열어 봐도 정답은 읽히지 않는다. */
+function h53(str, seed){
+  let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+  for(let i = 0, ch; i < str.length; i++){
+    ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1>>>16), 2246822507) ^ Math.imul(h2 ^ (h2>>>13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2>>>16), 2246822507) ^ Math.imul(h1 ^ (h1>>>13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1>>>0)).toString(36);
+}
+const saltFor = n => 0x4C5A78 + n * 7919;
+
+const op = s => `<span class="op">${s}</span>`;
+const QUESTIONS = [
+  { n:1, star:1, type:'num', key:['fmmsz0rdl2'], unit:'박',
+    expr: noteSVG('q')+op('+')+noteSVG('q')+op('='),
+    ask:'4분음표 + 4분음표는 몇 박일까요?',
+    hint:'4분음표(♩) 하나가 1박이야. 1 + 1은?' },
+  { n:2, star:1, type:'num', key:['2c8th5u8h8o'], unit:'박',
+    expr: noteSVG('q')+`<span class="txt">= 1박일 때,</span>`+noteSVG('w')+op('='),
+    ask:'4분음표를 1박이라고 할 때 온음표는 몇 박일까요?',
+    hint:'온음표(𝅝) 하나 안에 4분음표가 몇 개 들어갈까? 그 개수가 곧 박이야.' },
+  { n:3, star:1, type:'text', key:['2alxy1gjm4b'], unit:'',
+    expr:`<span class="txt">바장조(F major)의 <b>으뜸음</b>은?</span>`,
+    ask:'음이름으로 적어 주세요. (도·레·미·파·솔·라·시)',
+    hint:'바장조의 "바"가 우리말 음이름이야. 다=도, 라=레, 마=미, 바=?' },
+  { n:4, star:2, type:'num', key:['14jo2487frm'], unit:'박',
+    expr: noteSVG('qd')+op('+')+noteSVG('e')+op('='),
+    ask:'점4분음표 + 8분음표는 몇 박일까요?',
+    hint:'점이 붙으면 원래 길이의 절반이 더해져. 4분음표 1박 + 절반 0.5박 = 1.5박. 거기에 8분음표 0.5박을 더하면?' },
+  { n:5, star:2, type:'text', key:['nue0yakhf','slneribg5q','1ve7rqsylls','1pglhnd65jc'], unit:'',
+    expr:`<span class="txt">바장조 조표에서 <b>♭</b>이 붙는 음은?</span>`,
+    ask:'음이름으로 적어 주세요.',
+    hint:'바장조 조표에는 ♭이 딱 하나 붙어. 파에서 시작해 한 옥타브를 올라가 보면 어느 음이 반음 내려가야 할까?' },
+  { n:6, star:2, type:'num', key:['150unr7we1d'], unit:'박',
+    expr: noteSVG('e')+op('+')+noteSVG('e')+op('+')+noteSVG('q')+op('='),
+    ask:'8분음표 + 8분음표 + 4분음표는 몇 박일까요?',
+    hint:'8분음표는 반 박(0.5박)이야. 8분음표 둘을 합치면 4분음표 하나와 같아져.' },
+  { n:7, star:1, type:'num', key:['25hchfepqg6'], unit:'개',
+    expr:`<span class="txt">4/4박자 한 마디는</span>`+noteSVG('q')+`<span class="txt">몇 개?</span>`,
+    ask:'4분음표 몇 개로 한 마디가 채워질까요?',
+    hint:'박자표 아래 숫자 4는 "4분음표를 1박으로", 위 숫자 4는 "한 마디에 4박"이라는 뜻이야.' },
+  { n:8, star:2, type:'text', key:['2540n5l351g'], unit:'',
+    expr:`<span class="txt">바장조에서 음이름 <b>‘라’</b>는 계이름으로?</span>`,
+    ask:'계이름으로 적어 주세요. (도·레·미·파·솔·라·시)',
+    hint:'바장조는 파가 "도"야. 파=도, 솔=레, 라=?' },
+  { n:9, star:3, type:'num', key:['ezgxuwdzyx'], unit:'박',
+    expr: noteSVG('hd')+op('+')+noteSVG('q')+op('='),
+    ask:'점2분음표 + 4분음표는 몇 박일까요?',
+    hint:'2분음표는 2박, 점이 붙으면 절반인 1박이 더해져서 3박이야. 거기에 4분음표 1박을 더하면?' },
+  { n:10, star:2, type:'text', key:['1a4aecg6f1y'], unit:'',
+    expr:`<span class="txt">바장조 <b>으뜸화음(Ⅰ)</b>의 구성음은?</span>`,
+    ask:'음이름 세 개를 순서대로 적어 주세요. (예: 도미솔)',
+    hint:'으뜸음 파에서 한 음씩 건너뛰며 쌓아 봐. 파 - (솔) - 라 - (시) - ?' },
+  { n:11, star:3, type:'num', key:['14hypgoqmik'], unit:'박',
+    expr:`<span class="txt">3/4박자 한 마디에</span>`+noteSVG('h')+`<span class="txt">하나가 있으면 남은 박은?</span>`,
+    ask:'남은 박은 몇 박일까요?',
+    hint:'3/4박자 한 마디는 3박이야. 2분음표가 2박을 차지했으니 3에서 2를 빼 보자.' },
+  { n:12, star:2, type:'text', key:['5zj11usr3w'], unit:'',
+    expr:`<span class="txt">바장조 <b>딸림화음(Ⅴ)</b>의 구성음은?</span>`,
+    ask:'음이름 세 개를 순서대로 적어 주세요.',
+    hint:'딸림음은 으뜸음 파에서 다섯 번째 음이야. 파-솔-라-시-도. 그 도 위에 한 음씩 건너뛰며 쌓아 봐.' },
+  { n:13, star:3, type:'num', key:['17h31in1bzj'], unit:'개',
+    expr: noteSVG('w')+op('=')+noteSVG('e')+`<span class="txt">× ?</span>`,
+    ask:'온음표는 8분음표 몇 개와 같을까요?',
+    hint:'온음표는 4박, 8분음표는 반 박(0.5박)이야. 4를 0.5로 나누면?' },
+];
+
+/* 단서 13개 — 기획서 §5 그대로 */
+const CLUES = [
+  { n:1,  img:'img/clue_01.webp', title:'악보 케이스',
+    text:'케이스는 열려 있고 잠금장치가 부서지지 않았다. <b>누군가 열쇠 없이 열었거나, 원래 열려 있었다.</b>',
+    who:'김서준', line:'억지로 뜯은 흔적은 없어.' },
+  { n:2,  img:'img/clue_02.webp', title:'CCTV',
+    text:'저녁 <b>7시 40분</b>, 무대 담당 무대열이 음악실 앞 복도를 지나감. 손엔 케이블.',
+    who:'이승하', line:'일단 무대열 아저씨, 시간 기록.' },
+  { n:3,  img:'img/clue_03.webp', title:'회의록',
+    text:'강지휘 선생님은 <b>6시~7시 교무실 회의</b>. 7시 이후엔 퇴근.',
+    who:'전소민', line:'선생님은 그 시간 음악실에 없었어.' },
+  { n:4,  img:'img/clue_04.webp', title:'발자국',
+    text:'창틀에 <b>작은 발자국 4개</b>, 진흙. 크기 약 5cm.',
+    who:'김서준', line:'5cm? 사람 발이 아닌데…' },
+  { n:5,  img:'img/clue_05.webp', title:'회색 털',
+    text:'케이스 잠금쇠에 <b>회색 털</b> 한 뭉치.',
+    who:'권범준', line:'회색… 누가 회색이지?' },
+  { n:6,  img:'img/clue_06.webp', title:'녹음 파일',
+    text:'도레미의 연습 녹음: <b>6:10~7:00</b>, 옆 연습실. 바장조 반주 연습 소리.',
+    who:'이승하', line:'도레미도 그 시간엔 옆방에 있었어.' },
+  { n:7,  img:'img/clue_07.webp', title:'쪽지',
+    text:'바장조가 쓴 쪽지: “내 리코더 악보 어디 갔지…” — 자기 악보를 찾느라 <b>음악실을 뒤졌다</b>고 한다.',
+    who:'전소민', line:'수상하지만, 잃어버린 건 자기 악보야.' },
+  { n:8,  img:'img/clue_08.webp', title:'신발 + 발자국',
+    text:'무대열의 신발은 <b>270mm</b>. 창틀 발자국은 5cm. <b>무대열은 창틀 발자국의 주인이 아니다.</b>',
+    who:'김서준', line:'발자국은 무대열 아저씨 게 아니야.' },
+  { n:9,  img:'img/clue_09.webp', title:'찢긴 악보',
+    text:'복도에서 발견된 악보 조각. 가장자리에 <b>작은 이빨 자국</b>.',
+    who:'권범준', line:'물어뜯었어. 사람은 이렇게 안 해.' },
+  { n:10, img:'img/clue_10.webp', title:'고양이 장난감',
+    text:'피아노 밑에 <b>낚싯줄 장난감</b>. 어제 저녁에 누가 고양이랑 놀았다.',
+    who:'이승하', line:'쉼표가 어젯밤 음악실에 있었단 뜻이야.' },
+  { n:11, img:'img/clue_11.webp', title:'창문 잠금장치',
+    text:'음악실 창문은 <b>안에서만</b> 열린다. 밖에서 들어온 게 아니라 <b>안에 있던 존재가 나갔다</b>.',
+    who:'전소민', line:'범인은 원래 안에 있었어.' },
+  { n:12, img:'img/clue_12.webp', title:'급식실 목격',
+    text:'급식실 아주머니: “7시 반쯤 <b>회색 고양이가 종이를 물고</b> 복도로 뛰어갔어요.”',
+    who:'김서준', line:'종이를 물고?!' },
+  { n:13, img:'img/clue_13.webp', title:'황금 열쇠',
+    text:'<b>결정적 단서</b>: 피아노 밑 상자 안에서 <b>악보 발견</b>. 위에 쉼표가 자고 있음.',
+    who:'권범준', line:'사건 종료… 근데 악보가 조금 찢겼어.' },
+];
+
+/* 결말 대사 — 기획서 §7 그대로 */
+const ENDING = [
+  { who:'전소민', line:'정리할게. 창문은 안에서만 열려. 발자국은 5cm, 잠금쇠엔 회색 털. 그리고 7시 반에 종이를 문 회색 고양이가 목격됐어.' },
+  { who:'김서준', line:'쉼표! 네가 범인이었어!' },
+  { who:'쉼표',   line:'냐옹. (악보 위에서 기지개)' },
+  { who:'강지휘 선생님', line:'…악보가 조금 찢겼지만, 내일 발표회는 예정대로 갑니다. 복명초 탐정단, 고마워요!' },
+  { who:'권범준', line:'근데 선생님, 이 악보 바장조 맞죠? 시에 ♭ 붙어 있는 거 보니까.' },
+  { who:'강지휘 선생님', line:'정답. 내일 그 시♭, 틀리지 마라.' },
+];
+
+/* 교사용 채점 기준 — 기획서 §6 */
+const KEY_CLUE_WORDS = [
+  { label:'발자국 5cm', words:['발자국','5cm','5 cm','발자욱'] },
+  { label:'회색 털',    words:['회색 털','회색털','털'] },
+  { label:'이빨 자국',  words:['이빨','이발 자국','물어뜯','물어 뜯','깨문'] },
+  { label:'급식실 목격',words:['급식실','아주머니','목격','종이를 물'] },
+  { label:'창문 안쪽',  words:['창문','안에서만','안쪽'] },
+];
+const DECOY_WORDS = [
+  { label:'CCTV·무대열', words:['cctv','무대열'] },
+  { label:'바장조 쪽지', words:['쪽지','바장조가'] },
+];
+
+const PADLET = 'https://padlet.com/dpad566776/6-s023ofzett0iigolsg49';
+
+/* 교사 모드 — 주소 뒤에 ?teacher=1 을 붙였을 때만 채점 참고 줄이 보인다.
+   학생 화면과 저장 이미지에는 나오지 않는다. */
+const TEACHER = /[?&]teacher=1/.test(location.search);
+
+/* ═══════════════════════════════════════════
+   상태 · 저장
+   ═══════════════════════════════════════════ */
+const KEY = 'bm_detective_v1';
+const defaultState = () => ({
+  team:'', opened:[], wrong:{}, lockUntil:{},
+  accuse:{ suspect:'', r1:'', r2:'', r3:'', place:'' },
+  tries:0, solved:false, screen:'title'
+});
+let S = defaultState();
+
+function load(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(raw){ S = Object.assign(defaultState(), JSON.parse(raw)); S.accuse = Object.assign(defaultState().accuse, S.accuse||{}); }
+  }catch(e){ S = defaultState(); }
+}
+function save(){
+  try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
+}
+
+/* ═══════════════════════════════════════════
+   화면 전환
+   ═══════════════════════════════════════════ */
+const SCREENS = ['title','name','story','team','board','accuse','result'];
+function show(id, remember){
+  SCREENS.forEach(s => document.getElementById('s-'+s).classList.toggle('active', s===id));
+  window.scrollTo(0,0);
+  if(remember !== false){ S.screen = id; save(); }
+}
+
+/* ═══════════════════════════════════════════
+   타이틀 · 모둠명
+   ═══════════════════════════════════════════ */
+document.getElementById('startBtn').addEventListener('click', ()=>{
+  document.getElementById('teamInput').value = S.team || '';
+  show('name');
+  setTimeout(()=>document.getElementById('teamInput').focus(), 60);
+});
+
+function submitName(){
+  const v = document.getElementById('teamInput').value.trim();
+  if(!v){ document.getElementById('nameMsg').textContent = '모둠 이름을 적어 주세요!'; return; }
+  document.getElementById('nameMsg').textContent = '';
+  S.team = v; save(); paintTeamChips();
+  cutIdx = 0; renderCut(); show('story');
+}
+document.getElementById('nameBtn').addEventListener('click', submitName);
+document.getElementById('teamInput').addEventListener('keydown', e=>{ if(e.key==='Enter') submitName(); });
+
+function paintTeamChips(){
+  document.getElementById('chipTeam').textContent = S.team || '모둠';
+  document.getElementById('chipTeam2').textContent = S.team || '모둠';
+}
+
+/* ═══════════════════════════════════════════
+   스토리 컷
+   ═══════════════════════════════════════════ */
+let cutIdx = 0;
+function renderCut(){
+  const c = STORY[cutIdx];
+  const art = document.getElementById('cutArt');
+  art.classList.toggle('portrait', !!c.portrait);
+  document.getElementById('cutImg').src = c.img;
+  document.getElementById('cutImg').alt = '스토리 장면 ' + (cutIdx+1);
+  document.getElementById('cutNarr').innerHTML = c.text;
+  document.getElementById('cutDots').innerHTML = STORY.map((_,i)=>`<i class="${i===cutIdx?'on':''}"></i>`).join('');
+  document.getElementById('cutPrev').style.visibility = cutIdx===0 ? 'hidden' : 'visible';
+  document.getElementById('cutNext').textContent = cutIdx===STORY.length-1 ? '탐정단 만나기 →' : '다음 →';
+}
+document.getElementById('cutPrev').addEventListener('click', ()=>{ if(cutIdx>0){ cutIdx--; renderCut(); } });
+document.getElementById('cutNext').addEventListener('click', ()=>{
+  if(cutIdx < STORY.length-1){ cutIdx++; renderCut(); }
+  else show('team');
+});
+
+/* ═══════════════════════════════════════════
+   탐정단 소개
+   ═══════════════════════════════════════════ */
+document.getElementById('memberList').innerHTML = Object.entries(DETECTIVES).map(([nm,d])=>`
+  <div class="member">
+    <div class="nm"><span class="ini" style="background:${d.color}">${d.ini}</span>${nm}</div>
+    <span class="role">${d.role}</span>
+    <div class="say">${d.trait} · ${d.say}</div>
+  </div>`).join('');
+document.getElementById('toBoardBtn').addEventListener('click', ()=>{ renderBoard(); show('board'); });
+
+/* ═══════════════════════════════════════════
+   단서 보드
+   ═══════════════════════════════════════════ */
+const lockIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="4" y="10" width="16" height="10" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15" r="1.4" fill="currentColor" stroke="none"/></svg>`;
+const stars = n => '★'.repeat(n) + '☆'.repeat(3-n);
+
+function isLocked(n){ return (S.lockUntil[n]||0) > Date.now(); }
+function remain(n){ return Math.max(0, Math.ceil(((S.lockUntil[n]||0) - Date.now())/1000)); }
+
+function renderBoard(){
+  paintTeamChips();
+  const board = document.getElementById('board');
+  board.innerHTML = CLUES.map(c=>{
+    const open = S.opened.includes(c.n);
+    const q = QUESTIONS[c.n-1];
+    if(open){
+      return `<button class="clue open" data-n="${c.n}">
+        <span class="no">${c.n}</span><span class="star">${stars(q.star)}</span>
+        <div class="thumb"><img src="${c.img}" alt="${c.title}" loading="lazy"></div>
+        <div class="cap">${c.title}</div></button>`;
+    }
+    return `<button class="clue ${isLocked(c.n)?'locked-timer':''}" data-n="${c.n}">
+      <span class="no">${c.n}</span><span class="star">${stars(q.star)}</span>
+      <div class="lockart">${lockIcon}</div>
+      <div class="cap">잠긴 단서</div>
+      ${isLocked(c.n) ? `<div class="timer" data-timer="${c.n}">${remain(c.n)}초 후 재도전</div>` : ''}
+    </button>`;
+  }).join('');
+  board.querySelectorAll('.clue').forEach(b=>{
+    b.addEventListener('click', ()=> openCard(+b.dataset.n));
+  });
+  paintStats();
+}
+
+function paintStats(){
+  const n = S.opened.length;
+  document.getElementById('statOpen').textContent = n;
+  document.getElementById('statTry').textContent = S.tries;
+  document.getElementById('progBar').style.width = (n/13*100) + '%';
+  const btn = document.getElementById('accuseBtn');
+  btn.disabled = n < 8;
+  btn.textContent = n < 8 ? `🔒 범인 지목 (단서 ${8-n}개 더)` : '🎯 범인 지목하기';
+}
+
+/* 잠금 타이머 갱신 */
+setInterval(()=>{
+  let dirty = false;
+  document.querySelectorAll('[data-timer]').forEach(el=>{
+    const n = +el.dataset.timer;
+    if(isLocked(n)) el.textContent = remain(n) + '초 후 재도전';
+    else dirty = true;
+  });
+  const mt = document.getElementById('mCountdown');
+  if(mt){
+    const n = +mt.dataset.n;
+    if(isLocked(n)) mt.textContent = remain(n);
+    else openCard(n);
+  }
+  if(dirty && document.getElementById('s-board').classList.contains('active')) renderBoard();
+}, 500);
+
+/* ═══════════════════════════════════════════
+   모달 — 문제 / 단서
+   ═══════════════════════════════════════════ */
+const modal = document.getElementById('modal');
+function closeModal(){ modal.classList.remove('on'); }
+document.getElementById('mClose').addEventListener('click', closeModal);
+modal.addEventListener('click', e=>{ if(e.target===modal) closeModal(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
+
+function openCard(n){
+  const clue = CLUES[n-1];
+  modal.classList.add('on');
+  document.getElementById('mNo').textContent = '단서 ' + n;
+  if(S.opened.includes(n)) renderReveal(clue, false);
+  else if(isLocked(n)) renderLock(n);
+  else renderQuestion(n);
+}
+
+function renderLock(n){
+  document.getElementById('mTitle').textContent = '잠시 쉬어 가기';
+  document.getElementById('mBody').innerHTML = `
+    <div class="lockbox">두 번 틀렸어요. 조금만 기다렸다가 다시 도전해요!
+      <span class="cd"><b id="mCountdown" data-n="${n}">${remain(n)}</b>초</span></div>
+    <div class="hintbox" style="margin-top:16px">
+      <span class="who">권범준</span> : "${QUESTIONS[n-1].hint}"</div>
+    <div class="mfoot"><button class="btn ghost sm" onclick="closeModal()">단서 보드로</button></div>`;
+}
+
+function normAns(v){
+  return String(v).trim().toLowerCase()
+    .replace(/\s+/g,'')
+    .replace(/[,·\-—–~/]/g,'')
+    .replace(/[박개]/g,'')
+    .replace(/[()]/g,'');
+}
+/* 숫자는 표기를 하나로 맞춘다: '4개' '2 박' '2.0' '02' → '4' '2' '2' '2' */
+function canonAns(v){
+  const s = normAns(v);
+  return /^-?\d+(\.\d+)?$/.test(s) ? String(parseFloat(s)) : s;
+}
+
+function renderQuestion(n){
+  const q = QUESTIONS[n-1];
+  document.getElementById('mTitle').textContent = `문제 ${q.n}  ${stars(q.star)}`;
+  document.getElementById('mBody').innerHTML = `
+    <div class="qexpr">${q.expr}</div>
+    <div class="qask">${q.ask}</div>
+    <div class="ansrow">
+      <input id="ansInput" autocomplete="off" ${q.type==='num'?'inputmode="decimal"':''} placeholder="답">
+      ${q.unit ? `<span class="unit">${q.unit}</span>` : ''}
+      <button class="btn sm" id="ansBtn">확인</button>
+    </div>
+    <div class="feedback" id="fb"></div>
+    <div id="hintSlot"></div>`;
+  const input = document.getElementById('ansInput');
+  document.getElementById('ansBtn').addEventListener('click', ()=>checkAnswer(n));
+  input.addEventListener('keydown', e=>{ if(e.key==='Enter') checkAnswer(n); });
+  if((S.wrong[n]||0) >= 1) showHint(n);
+  setTimeout(()=>input.focus(), 80);
+}
+
+function showHint(n){
+  const slot = document.getElementById('hintSlot');
+  if(slot && !slot.innerHTML){
+    slot.innerHTML = `<div class="hintbox"><span class="who">권범준</span> : "${QUESTIONS[n-1].hint}"</div>`;
+  }
+}
+
+function checkAnswer(n){
+  const q = QUESTIONS[n-1];
+  const raw = document.getElementById('ansInput').value;
+  if(!raw.trim()) return;
+  const ok = q.key.includes(h53(canonAns(raw), saltFor(q.n)));
+
+  if(ok){
+    if(!S.opened.includes(n)) S.opened.push(n);
+    S.opened.sort((a,b)=>a-b);
+    delete S.wrong[n]; delete S.lockUntil[n];
+    save(); renderBoard();
+    renderReveal(CLUES[n-1], true);
+    return;
+  }
+
+  S.wrong[n] = (S.wrong[n]||0) + 1;
+  const fb = document.getElementById('fb');
+  fb.className = 'feedback bad';
+  if(S.wrong[n] === 1){
+    fb.textContent = '아쉬워요! 힌트를 보고 다시 도전해 보세요.';
+    showHint(n); save();
+  }else{
+    S.lockUntil[n] = Date.now() + 30000;
+    S.wrong[n] = 0;
+    save(); renderBoard(); renderLock(n);
+  }
+}
+
+function renderReveal(clue, isNew){
+  const d = DETECTIVES[clue.who];
+  document.getElementById('mTitle').textContent = (isNew ? '단서 획득! · ' : '') + clue.title;
+  document.getElementById('mBody').innerHTML = `
+    <div class="reveal">
+      <div class="art"><img src="${clue.img}" alt="${clue.title}"></div>
+      <div class="ct">${isNew ? '🔓 ' : ''}${clue.title}</div>
+      <div class="cdesc">${clue.text}</div>
+      <div class="say-line">
+        <span class="ini" style="background:${d.color}">${d.ini}</span>
+        <span class="tx"><span class="nm">${clue.who}</span>"${clue.line}"</span>
+      </div>
+      <div class="mfoot">
+        <button class="btn" onclick="closeModal()">단서 보드로 돌아가기</button>
+      </div>
+    </div>`;
+}
+
+/* ═══════════════════════════════════════════
+   범인 지목
+   ═══════════════════════════════════════════ */
+document.getElementById('accuseBtn').addEventListener('click', ()=>{ renderAccuse(); show('accuse'); });
+document.getElementById('backBoardBtn').addEventListener('click', ()=>{ renderBoard(); show('board'); });
+
+function renderAccuse(){
+  paintTeamChips();
+  document.getElementById('suspectList').innerHTML = SUSPECTS.map(s=>`
+    <button class="sus ${S.accuse.suspect===s.id?'sel':''}" data-id="${s.id}">
+      <img src="${s.img}" alt="${s.name}" loading="lazy">
+      <div class="nm">${s.name}</div><div class="rl">${s.role}</div>
+    </button>`).join('');
+  document.querySelectorAll('.sus').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      S.accuse.suspect = b.dataset.id; save();
+      document.querySelectorAll('.sus').forEach(x=>x.classList.toggle('sel', x===b));
+    });
+  });
+  ['r1','r2','r3','place'].forEach(id=>{
+    const el = document.getElementById(id);
+    el.value = S.accuse[id] || '';
+    el.oninput = ()=>{ S.accuse[id] = el.value; save(); };
+  });
+  document.getElementById('accuseMsg').textContent = '';
+}
+
+document.getElementById('submitBtn').addEventListener('click', ()=>{
+  const a = S.accuse, msg = document.getElementById('accuseMsg');
+  if(!a.suspect){ msg.textContent = '용의자를 한 명 골라 주세요!'; return; }
+  if(!a.r1.trim() || !a.r2.trim() || !a.r3.trim()){ msg.textContent = '근거 3가지를 모두 적어 주세요!'; return; }
+  if(!a.place.trim()){ msg.textContent = '악보가 있을 곳을 적어 주세요!'; return; }
+  msg.textContent = '';
+  S.tries++;
+  const correct = a.suspect === CULPRIT;
+  if(correct) S.solved = true;
+  save();
+  renderResult(correct); show('result');
+});
+
+/* ═══════════════════════════════════════════
+   결과
+   ═══════════════════════════════════════════ */
+function matched(list){
+  const hay = [S.accuse.r1, S.accuse.r2, S.accuse.r3, S.accuse.place].join(' ').toLowerCase();
+  return list.filter(k => k.words.some(w => hay.includes(w.toLowerCase()))).map(k=>k.label);
+}
+
+function renderResult(correct){
+  const card = document.getElementById('resultCard');
+  const acts = document.getElementById('resultActions');
+  document.getElementById('saveMsg').textContent = '';
+
+  if(!correct){
+    const picked = SUSPECTS.find(s=>s.id===S.accuse.suspect);
+    card.innerHTML = `
+      <div class="rhead"><span class="badge">수사 계속</span>
+        <h2>아직 단서가 부족해!</h2>
+        <p>${S.team} · 지목 시도 ${S.tries}회 · 연 단서 ${S.opened.length}/13</p></div>
+      <div class="rbody"><div class="failbox">
+        <div class="em">🔍</div>
+        <h2>${picked ? picked.name : '용의자'}… 정말일까?</h2>
+        <p>전소민: "잠깐, 다시 생각해 보자.<br>
+        <b>창문은 어느 쪽에서만 열릴까? 발자국 크기는 몇 cm였지?</b><br>
+        단서를 더 열어서 확인해 보자!"</p>
+      </div></div>`;
+    acts.innerHTML = `<button class="btn" id="againBtn">🗂 단서 보드로 돌아가기</button>`;
+    document.getElementById('againBtn').onclick = ()=>{ renderBoard(); show('board'); };
+    return;
+  }
+
+  const keys = matched(KEY_CLUE_WORDS);
+  const decoys = matched(DECOY_WORDS);
+  const placeOK = /피아노/.test(S.accuse.place) && /(밑|아래|상자)/.test(S.accuse.place);
+  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  card.innerHTML = `
+    <div class="rhead"><span class="badge">사건 해결</span>
+      <h2>🎉 범인은 음악실 고양이 ‘쉼표’!</h2>
+      <p>${esc(S.team)} · 연 단서 ${S.opened.length}/13 · 지목 시도 ${S.tries}회</p></div>
+    <div class="rbody">
+      <div class="endart"><img src="img/scene_3.webp" alt="피아노 밑 상자에서 악보를 발견한 장면" loading="lazy"></div>
+      <div class="script">
+        ${ENDING.map(e=>{
+          const d = DETECTIVES[e.who] || { ini:e.who[0], color:'#8A7A4E' };
+          return `<div class="ln"><span class="ini" style="background:${d.color}">${d.ini}</span>
+            <span class="tx"><span class="nm">${e.who}</span>"${e.line}"</span></div>`;
+        }).join('')}
+      </div>
+      <div class="answerbox">
+        <h4>📋 ${esc(S.team)} 수사 보고서</h4>
+        <div class="kv"><span>지목</span> 쉼표 (음악실 고양이) ✔</div>
+        <div class="kv"><span>악보 위치</span> ${esc(S.accuse.place)} ${placeOK?'✔':'— 정답은 <b>피아노 밑 상자</b>'}</div>
+        <div class="kv"><span>근거</span></div>
+        <ol>
+          <li>${esc(S.accuse.r1)}</li>
+          <li>${esc(S.accuse.r2)}</li>
+          <li>${esc(S.accuse.r3)}</li>
+        </ol>
+        <div class="statsrow">
+          <span class="stat-pill">연 단서 ${S.opened.length}개</span>
+          <span class="stat-pill">지목 ${S.tries}회</span>
+        </div>
+        ${TEACHER ? `<div class="teachernote">
+          👩‍🏫 교사 확인용 — 결정적 단서 ${keys.length}개${keys.length ? ' (' + keys.join(', ') + ')' : ''}${keys.length>=2 ? ' · 우수' : ''}${decoys.length ? ' / 연막 단서 사용: ' + decoys.join(', ') : ''}
+        </div>` : ''}
+      </div>
+    </div>`;
+
+  acts.innerHTML = `
+    <button class="btn solid" id="saveBtn">📷 결과를 이미지로 저장</button>
+    <button class="btn" id="padBtn">📤 패들렛으로 제출</button>
+    <button class="btn ghost sm" id="backBtn">🗂 단서 보드로</button>`;
+  document.getElementById('saveBtn').onclick = saveImage;
+  document.getElementById('padBtn').onclick = ()=> window.open(PADLET, '_blank');
+  document.getElementById('backBtn').onclick = ()=>{ renderBoard(); show('board'); };
+}
+
+function saveImage(){
+  const msg = document.getElementById('saveMsg');
+  msg.textContent = '이미지를 만드는 중…';
+  html2canvas(document.getElementById('resultCard'), { scale:2, backgroundColor:'#FDFDFE', useCORS:true })
+    .then(c=>{
+      const a = document.createElement('a');
+      a.download = `복명초탐정단_${(S.team||'모둠').replace(/[\\/:*?"<>|]/g,'')}.png`;
+      a.href = c.toDataURL('image/png');
+      a.click();
+      msg.textContent = '저장 완료! 패들렛에 올려 주세요.';
+    })
+    .catch(()=>{ msg.textContent = '이미지 저장에 실패했어요. 화면을 캡처해서 올려 주세요.'; });
+}
+
+/* ═══════════════════════════════════════════
+   처음부터
+   ═══════════════════════════════════════════ */
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  if(!confirm('수사 기록이 모두 지워집니다. 정말 처음부터 시작할까요?')) return;
+  S = defaultState(); save();
+  document.getElementById('teamInput').value = '';
+  show('title');
+});
+
+/* ═══════════════════════════════════════════
+   시작
+   ═══════════════════════════════════════════ */
+load();
+paintTeamChips();
+if(S.team && ['board','accuse','result'].includes(S.screen)){
+  renderBoard();
+  if(S.screen === 'accuse'){ renderAccuse(); show('accuse', false); }
+  else if(S.screen === 'result' && S.solved){ renderResult(true); show('result', false); }
+  else show('board', false);
+}else{
+  show('title', false);
+}
+</script>
+</body>
+</html>
