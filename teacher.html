@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>모둠 진행 상황 — 복명초 탐정단</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#4C5A78">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234C5A78'/%3E%3Crect x='7' y='17' width='4' height='8' fill='%23EDE28E'/%3E%3Crect x='14' y='12' width='4' height='13' fill='%23EDE28E'/%3E%3Crect x='21' y='7' width='4' height='18' fill='%23EDE28E'/%3E%3C/svg%3E">
+<script src="config.js"></script>
+<style>
+  :root{
+    --blue:#4C5A78; --blue-deep:#3A465E; --blue-soft:#E6EAF2; --blue-line:#C6CEDF;
+    --lemon:#EDE28E; --lemon-deep:#D9C95F; --cream:#FDFDFE; --ink:#2B3242; --dim:#7A8296;
+    --bg:#F4F6FA; --ok:#3F9A6E; --no:#D9605B; --warn:#C9873A;
+    --shadow:0 4px 14px rgba(43,50,66,.10);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    background:var(--bg); color:var(--ink)}
+  button{font-family:inherit; cursor:pointer; border:none}
+
+  .topbar{background:var(--blue); color:#fff; box-shadow:var(--shadow)}
+  .topbar .inner{max-width:1180px; margin:0 auto; padding:13px 20px;
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap}
+  .topbar .logo{font-size:17px; font-weight:800; letter-spacing:-.02em}
+  .topbar .spacer{flex:1}
+  .topbar .live{display:flex; align-items:center; gap:7px; font-size:12.5px; font-weight:700; color:#D6DCEA}
+  .topbar .live i{width:8px; height:8px; border-radius:50%; background:var(--ok)}
+  .topbar .live.off i{background:var(--no); animation:none}
+  .topbar .live i{animation:blip 2s ease-in-out infinite}
+  @keyframes blip{0%,100%{opacity:1} 50%{opacity:.25}}
+  .topbar .mini{background:rgba(255,255,255,.14); color:#fff; font-size:12px;
+    font-weight:700; padding:7px 14px; border-radius:999px}
+  .topbar .mini:hover{background:rgba(255,255,255,.26)}
+
+  .wrap{max-width:1180px; margin:0 auto; padding:20px 20px 48px}
+
+  .cards{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:18px}
+  @media (max-width:780px){ .cards{grid-template-columns:repeat(2,1fr)} }
+  .kpi{background:var(--cream); border:2px solid var(--blue-line); border-radius:14px;
+    padding:14px 16px; box-shadow:var(--shadow)}
+  .kpi .lb{font-size:12px; font-weight:800; color:var(--dim)}
+  .kpi .vl{font-size:27px; font-weight:800; color:var(--blue); margin-top:4px; line-height:1.1}
+  .kpi .vl small{font-size:14px; color:var(--dim); font-weight:700}
+
+  .panel{background:var(--cream); border:2px solid var(--blue-line);
+    border-radius:16px; box-shadow:var(--shadow); overflow:hidden}
+  .panel h2{font-size:15px; font-weight:800; color:var(--blue); padding:14px 18px 12px;
+    border-bottom:2px solid var(--blue-line); display:flex; align-items:center; gap:9px}
+  .panel h2 .tag{background:var(--lemon); color:var(--blue-deep); font-size:11px;
+    padding:3px 10px; border-radius:999px}
+
+  table{width:100%; border-collapse:collapse; font-size:14px}
+  th{background:var(--blue-soft); color:var(--blue); font-weight:800; font-size:12.5px;
+    text-align:left; padding:10px 14px; border-bottom:2px solid var(--blue-line); white-space:nowrap}
+  td{padding:11px 14px; border-bottom:1.5px solid #EDF0F6; vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tr.help{background:#FFF6F5}
+  tr.done{background:#F2FAF6}
+  td.team{font-weight:800; color:var(--blue); font-size:15px}
+  td.num{font-weight:800; text-align:center; width:62px}
+
+  .bar{display:flex; align-items:center; gap:10px; min-width:190px}
+  .bar .track{flex:1; height:11px; background:var(--blue-soft); border:1.5px solid var(--blue-line);
+    border-radius:999px; overflow:hidden; min-width:110px}
+  .bar .fill{display:block; height:100%; background:linear-gradient(90deg,var(--lemon),var(--lemon-deep));
+    transition:width .5s ease}
+  .bar .fill.done{background:linear-gradient(90deg,#7FCBA4,var(--ok))}
+  .bar .cnt{font-size:13px; font-weight:800; color:var(--blue); white-space:nowrap; width:44px}
+
+  .pill{display:inline-block; font-size:12px; font-weight:800; padding:5px 12px; border-radius:999px; white-space:nowrap}
+  .pill.ok{background:#DFF2E8; color:var(--ok)}
+  .pill.go{background:var(--blue-soft); color:var(--blue)}
+  .pill.stuck{background:#FBEEDC; color:var(--warn)}
+  .pill.idle{background:#FBE4E3; color:var(--no)}
+  .ago{font-size:12.5px; font-weight:700; color:var(--dim); white-space:nowrap}
+  .ago.old{color:var(--no)}
+
+  .qbars{display:grid; grid-template-columns:repeat(13,1fr); gap:6px; padding:16px 18px}
+  .qb{text-align:center}
+  .qb .cap{font-size:11px; font-weight:800; color:var(--dim); margin-bottom:5px}
+  .qb .col{height:64px; background:var(--blue-soft); border:1.5px solid var(--blue-line);
+    border-radius:7px; position:relative; overflow:hidden; display:flex; flex-direction:column-reverse}
+  .qb .col .done{background:var(--lemon); width:100%}
+  .qb .col .stk{background:#E8A87C; width:100%}
+  .qb .n{font-size:11.5px; font-weight:800; color:var(--blue); margin-top:5px}
+  .qb.hot .n{color:var(--no)}
+  .qb.hot .cap{color:var(--no)}
+
+  .empty{padding:48px 24px; text-align:center; color:var(--dim); font-weight:700; line-height:1.9; font-size:14px}
+  .setup{max-width:760px; margin:6vh auto; background:var(--cream); border:2px solid var(--blue-line);
+    border-radius:18px; padding:28px 30px; box-shadow:var(--shadow)}
+  .setup h1{font-size:21px; font-weight:800; color:var(--blue); margin-bottom:6px}
+  .setup p{font-size:14.5px; font-weight:600; color:var(--dim); line-height:1.85; margin-bottom:14px}
+  .setup ol{margin-left:20px; font-size:14.5px; font-weight:700; line-height:2.1; color:var(--ink)}
+  .setup code{background:var(--blue-soft); color:var(--blue-deep); padding:2px 7px;
+    border-radius:6px; font-size:13px; font-weight:800}
+  .err{background:#FBE4E3; border:2px solid #F0C9C7; color:var(--no); font-size:13.5px;
+    font-weight:700; padding:12px 16px; border-radius:12px; margin-bottom:16px; line-height:1.7}
+  .foot{text-align:center; font-size:12.5px; font-weight:700; color:var(--dim); margin-top:18px; line-height:1.9}
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+const URL_ = String(window.SYNC_URL || '').trim();
+const POLL = (Number(window.SYNC_POLL_SEC) || 5) * 1000;
+const IDLE = (Number(window.SYNC_IDLE_MIN) || 5) * 60000;
+const TOTAL = 13;
+
+const app = document.getElementById('app');
+let timer = null, failures = 0, lastOK = 0, paused = false;
+
+if(!URL_){
+  app.innerHTML = `
+    <div class="setup">
+      <h1>모니터링이 아직 연결되지 않았어요</h1>
+      <p>모둠 진행 상황을 모으려면 구글 스프레드시트를 한 번 연결해야 합니다. 약 5분이면 됩니다.</p>
+      <ol>
+        <li>구글 스프레드시트를 새로 만듭니다</li>
+        <li><b>확장 프로그램 ▸ Apps Script</b> 를 엽니다</li>
+        <li>저장소의 <code>apps-script.gs</code> 내용을 붙여 넣습니다</li>
+        <li><b>배포 ▸ 새 배포 ▸ 웹 앱</b>, 액세스 권한은 <b>모든 사용자</b></li>
+        <li>나오는 <code>.../exec</code> 주소를 <code>config.js</code> 의 <code>SYNC_URL</code> 에 붙여 넣습니다</li>
+      </ol>
+      <p style="margin-top:16px">자세한 순서는 <code>apps-script.gs</code> 파일 맨 위 주석에 그대로 적어 두었습니다.<br>
+      연결하지 않아도 게임은 지금처럼 잘 돌아갑니다 — 모니터링만 꺼져 있는 상태입니다.</p>
+    </div>`;
+}else{
+  render(null, '불러오는 중…');
+  tick();
+  timer = setInterval(tick, POLL);
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) tick(); });
+}
+
+function tick(){
+  if(paused) return;
+  fetch(URL_ + '?t=' + Date.now(), { method:'GET' })
+    .then(r => r.json())
+    .then(d => {
+      if(!d || !d.ok) throw new Error(d && d.error ? d.error : '응답 형식 오류');
+      failures = 0; lastOK = Date.now();
+      render(d.rows || [], null);
+    })
+    .catch(err => {
+      failures++;
+      render(null, failures >= 3 ? ('연결이 안 됩니다 — ' + err.message) : null);
+    });
+}
+
+const agoText = ms => {
+  const s = Math.floor(ms/1000);
+  if(s < 10) return '방금';
+  if(s < 60) return s + '초 전';
+  const m = Math.floor(s/60);
+  if(m < 60) return m + '분 전';
+  return Math.floor(m/60) + '시간 전';
+};
+
+function statusOf(r, now){
+  const idle = now - (r.lastActive || 0);
+  if(r.solved) return { cls:'ok', label:'✅ 해결', rank:4 };
+  if(idle > IDLE) return { cls:'idle', label:'⚠️ ' + Math.floor(idle/60000) + '분째 멈춤', rank:0 };
+  if(r.stuck && r.stuck.length) return { cls:'stuck', label:'⏳ ' + r.stuck.join('·') + '번 막힘', rank:1 };
+  if(r.tries > 0) return { cls:'go', label:'🎯 지목 ' + r.tries + '회', rank:2 };
+  return { cls:'go', label:'🔍 수사중', rank:3 };
+}
+
+function render(rows, note){
+  if(rows === null && !document.querySelector('table')){
+    app.innerHTML = shell(`<div class="empty">${note || '…'}</div>`, 0, 0, 0, 0);
+    return;
+  }
+  if(rows === null){                       // 일시적 실패 — 기존 표는 그대로 두고 표시만 바꾼다
+    const live = document.getElementById('live');
+    if(live && note){ live.className = 'live off'; live.innerHTML = '<i></i>' + note; }
+    return;
+  }
+
+  const now = Date.now();
+  const list = rows.map(r => ({ ...r, st: statusOf(r, now) }))
+    .sort((a,b) => a.st.rank - b.st.rank || a.openedCount - b.openedCount || a.team.localeCompare(b.team));
+
+  const solved = list.filter(r => r.solved).length;
+  const avg = list.length ? (list.reduce((s,r) => s + r.openedCount, 0) / list.length) : 0;
+  const help = list.filter(r => r.st.rank <= 1).length;
+
+  const body = list.length === 0
+    ? `<div class="empty">아직 올라온 모둠이 없습니다.<br>모둠이 모둠명을 입력하면 여기에 나타납니다.</div>`
+    : `<table>
+        <tr><th>모둠</th><th>진행</th><th>지목</th><th>상태</th><th>마지막 활동</th></tr>
+        ${list.map(r => {
+          const idle = now - (r.lastActive || 0);
+          const pct = Math.round(r.openedCount / TOTAL * 100);
+          return `<tr class="${r.solved ? 'done' : (r.st.rank <= 1 ? 'help' : '')}">
+            <td class="team">${esc(r.team)}</td>
+            <td><div class="bar">
+              <span class="track"><span class="fill ${r.solved?'done':''}" style="width:${pct}%"></span></span>
+              <span class="cnt">${r.openedCount}/${TOTAL}</span></div></td>
+            <td class="num">${r.tries || '–'}</td>
+            <td><span class="pill ${r.st.cls}">${r.st.label}</span></td>
+            <td><span class="ago ${idle > IDLE ? 'old' : ''}">${agoText(idle)}</span></td>
+          </tr>`;
+        }).join('')}
+      </table>`;
+
+  // 문제별: 몇 모둠이 풀었나 / 몇 모둠이 막혀 있나
+  const per = Array.from({length:TOTAL}, (_,i) => {
+    const n = i + 1;
+    return { n,
+      done: list.filter(r => r.opened.includes(n)).length,
+      stuck: list.filter(r => r.stuck.includes(n)).length };
+  });
+  const N = Math.max(list.length, 1);
+  const qbars = `<div class="qbars">${per.map(p => {
+    const hot = p.stuck >= 2;
+    return `<div class="qb ${hot?'hot':''}" title="${p.n}번 — 해결 ${p.done}모둠, 막힘 ${p.stuck}모둠">
+      <div class="cap">${p.stuck ? '막힘 ' + p.stuck : '&nbsp;'}</div>
+      <div class="col">
+        <span class="done" style="height:${p.done/N*100}%"></span>
+        <span class="stk" style="height:${p.stuck/N*100}%"></span>
+      </div>
+      <div class="n">${p.n}</div></div>`;
+  }).join('')}</div>`;
+
+  app.innerHTML = shell(body + `</div><div class="panel" style="margin-top:16px">
+      <h2><span class="tag">문제별</span>어디서 막히고 있나 <span style="font-weight:700;color:var(--dim);font-size:12px">
+        · 노란색 = 푼 모둠, 주황색 = 지금 막힌 모둠</span></h2>${qbars}`,
+    list.length, solved, avg, help);
+}
+
+function shell(inner, total, solved, avg, help){
+  return `
+  <div class="topbar"><div class="inner">
+    <div class="logo">📊 모둠 진행 상황</div>
+    <div class="spacer"></div>
+    <div class="live" id="live"><i></i>${POLL/1000}초마다 자동 갱신 · ${new Date().toLocaleTimeString('ko-KR')}</div>
+    <button class="mini" id="pauseBtn">${paused ? '▶ 다시 시작' : '⏸ 멈춤'}</button>
+    <button class="mini" onclick="tick()">↻ 지금 새로고침</button>
+  </div></div>
+  <div class="wrap">
+    <div class="cards">
+      <div class="kpi"><div class="lb">참여 모둠</div><div class="vl">${total}<small> 모둠</small></div></div>
+      <div class="kpi"><div class="lb">사건 해결</div><div class="vl">${solved}<small> / ${total}</small></div></div>
+      <div class="kpi"><div class="lb">평균 단서</div><div class="vl">${avg.toFixed(1)}<small> / ${TOTAL}</small></div></div>
+      <div class="kpi"><div class="lb">도움 필요</div><div class="vl" style="color:${help?'var(--no)':'var(--blue)'}">${help}<small> 모둠</small></div></div>
+    </div>
+    <div class="panel">
+      <h2><span class="tag">실시간</span>모둠별 진행 · 도움이 필요한 모둠이 위로 옵니다</h2>
+      ${inner}
+    </div>
+    <div class="foot">이 화면은 학생에게 알려주지 마세요 · 기록은 선생님 구글 스프레드시트에 저장됩니다</div>
+  </div>`;
+}
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+document.addEventListener('click', e => {
+  if(e.target && e.target.id === 'pauseBtn'){
+    paused = !paused;
+    e.target.textContent = paused ? '▶ 다시 시작' : '⏸ 멈춤';
+    if(!paused) tick();
+  }
+});
+</script>
+</body>
+</html>
