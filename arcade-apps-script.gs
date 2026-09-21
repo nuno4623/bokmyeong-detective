@@ -128,11 +128,16 @@ function book_() {
    ──────────────────────────────────────────────────────── */
 function checkSetup() {
   var ss = book_();
-  var hasKey = !!PropertiesService.getScriptProperties().getProperty('ADMIN_KEY');
   Logger.log('✅ 코드 정상');
   Logger.log('작품이 쌓일 시트 : ' + ss.getName());
   Logger.log('시트 주소        : ' + ss.getUrl());
-  Logger.log('관리자 암호(ADMIN_KEY) : ' + (hasKey ? '설정됨' : '아직 없음 — 삭제 버튼이 안 먹습니다'));
+  var key = PropertiesService.getScriptProperties().getProperty('ADMIN_KEY');
+  if (key) {
+    Logger.log('관리자 암호(ADMIN_KEY) : [' + key + '] (' + key.length + '글자)');
+    if (key !== key.trim()) Logger.log('   ⚠️ 앞뒤에 공백이 들어 있습니다 — 그래도 동작하도록 처리했습니다');
+  } else {
+    Logger.log('관리자 암호(ADMIN_KEY) : 아직 없음 — 삭제 버튼이 안 먹습니다');
+  }
   return ss.getUrl();
 }
 
@@ -214,7 +219,8 @@ function readBlob_(id, kind) {
 function adminOk_(key) {
   var want = PropertiesService.getScriptProperties().getProperty('ADMIN_KEY');
   if (!want) return false;
-  return String(key || '') === String(want);
+  // 복사·붙여넣기로 딸려 들어온 앞뒤 공백·줄바꿈 때문에 안 맞는 일이 잦아서 양쪽 다 털어낸다
+  return String(key == null ? '' : key).trim() === String(want).trim();
 }
 
 /* 한 작품을 통째로 지운다 (목록 한 줄 + 흩어진 조각들) */
