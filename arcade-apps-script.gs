@@ -72,6 +72,10 @@
       4만 자씩 잘라서 여러 줄로 나눠 담습니다. 손으로 고칠 일은 없습니다.
    ═══════════════════════════════════════════════════════════════ */
 
+/* 배포된 코드가 최신인지 눈으로 확인하는 도장.
+   ?mode=info 로 보이는 값과 checkSetup 로그의 값이 같아야 최신입니다. */
+var CODE_VERSION = '2026-09-21-a';
+
 var META_SHEET = '아케이드';
 var DATA_SHEET = '작품데이터';
 var META_HEADERS = ['ID', '등록시각', '학생', '학급', '제목', '장르', '설명',
@@ -128,17 +132,21 @@ function book_() {
    ──────────────────────────────────────────────────────── */
 function checkSetup() {
   var ss = book_();
+  var key = adminKey_();
   Logger.log('✅ 코드 정상');
-  Logger.log('작품이 쌓일 시트 : ' + ss.getName());
-  Logger.log('시트 주소        : ' + ss.getUrl());
-  var key = PropertiesService.getScriptProperties().getProperty('ADMIN_KEY');
-  if (key) {
-    Logger.log('관리자 암호(ADMIN_KEY) : [' + key + '] (' + key.length + '글자)');
-    if (key !== key.trim()) Logger.log('   ⚠️ 앞뒤에 공백이 들어 있습니다 — 그래도 동작하도록 처리했습니다');
-  } else {
-    Logger.log('관리자 암호(ADMIN_KEY) : 아직 없음 — 삭제 버튼이 안 먹습니다');
-  }
-  return ss.getUrl();
+  Logger.log('');
+  Logger.log('코드 버전    : ' + CODE_VERSION);
+  Logger.log('스크립트 ID  : ' + ScriptApp.getScriptId());
+  Logger.log('작품 쌓일 시트: ' + ss.getName());
+  Logger.log('시트 주소    : ' + ss.getUrl());
+  Logger.log('관리자 암호  : [' + key + ']  (' + key.length + '글자)');
+  Logger.log('');
+  Logger.log('── 배포가 최신인지 확인하는 법 ──');
+  Logger.log('배포 주소 뒤에 ?mode=info 를 붙여서 열어 보세요.');
+  Logger.log(' · codeVersion 이 위 «코드 버전» 과 다르면 → 재배포가 반영되지 않은 것입니다');
+  Logger.log(' · scriptId 가 위 «스크립트 ID» 와 다르면  → 다른 프로젝트를 배포한 것입니다');
+  Logger.log(' · 둘 다 같으면 → 관리자 주소는  ...arcade.html?admin=' + key);
+  return key;
 }
 
 function metaSheet_() {
@@ -216,11 +224,21 @@ function readBlob_(id, kind) {
 }
 
 /* 관리자 열쇠 확인 — 스크립트 속성에 ADMIN_KEY 를 넣어 두지 않으면 아무도 못 지운다 */
+/* 관리자 암호를 돌려준다.
+   정해 두지 않았으면 무작위로 하나 만들어 둔다 — 그래야 "암호가 없어서 아무것도 못 지우는"
+   상태에 빠지지 않는다. 만들어진 암호는 checkSetup 로그에서만 볼 수 있다. */
+function adminKey_() {
+  var props = PropertiesService.getScriptProperties();
+  var key = props.getProperty('ADMIN_KEY');
+  if (key && key.trim()) return key.trim();
+  var made = Utilities.getUuid().replace(/-/g, '').slice(0, 10);
+  props.setProperty('ADMIN_KEY', made);
+  return made;
+}
+
 function adminOk_(key) {
-  var want = PropertiesService.getScriptProperties().getProperty('ADMIN_KEY');
-  if (!want) return false;
-  // 복사·붙여넣기로 딸려 들어온 앞뒤 공백·줄바꿈 때문에 안 맞는 일이 잦아서 양쪽 다 털어낸다
-  return String(key == null ? '' : key).trim() === String(want).trim();
+  // 복사·붙여넣기로 딸려 들어온 앞뒤 공백·줄바꿈 때문에 안 맞는 일이 잦아서 털어낸다
+  return String(key == null ? '' : key).trim() === adminKey_();
 }
 
 /* 한 작품을 통째로 지운다 (목록 한 줄 + 흩어진 조각들) */
@@ -277,9 +295,11 @@ function doGet(e) {
       var ss = book_();
       return json_({
         ok: true,
+        codeVersion: CODE_VERSION,          // checkSetup 로그의 값과 같아야 최신 코드
+        scriptId: ScriptApp.getScriptId(),  // checkSetup 로그의 값과 같아야 같은 프로젝트
         sheetName: ss.getName(),
         sheetUrl: ss.getUrl(),
-        adminKeySet: !!PropertiesService.getScriptProperties().getProperty('ADMIN_KEY')
+        adminKeySet: true                   // 암호는 여기서 알려주지 않는다 (공개 주소이므로)
       });
     }
 
