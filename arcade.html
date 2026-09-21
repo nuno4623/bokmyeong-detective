@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>우리 반 AI 게임 아케이드 🎮 | Student Game Showcase</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts & FontAwesome -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Jua&family=Plus+Jakarta+Sans:wght@500;700;800&family=Pretendard:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Pretendard', '-apple-system', 'sans-serif'],
+            jua: ['Jua', 'cursive'],
+            display: ['Plus Jakarta Sans', 'sans-serif']
+          },
+          colors: {
+            arcade: {
+              bg: '#0b0f19',
+              card: '#131b2e',
+              border: '#1f2d4d',
+              accent: '#6366f1',
+              glow: '#818cf8',
+              gold: '#fbbf24'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #0b0f19;
+      color: #f1f5f9;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(99, 102, 241, 0.4);
+      border-radius: 9999px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: rgba(99, 102, 241, 0.8);
+    }
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 15px rgba(99, 102, 241, 0.3); }
+      50% { box-shadow: 0 0 30px rgba(129, 140, 248, 0.6); }
+    }
+    .glow-active {
+      animation: pulseGlow 2.5s infinite;
+    }
+    @keyframes floatParticle {
+      0% { transform: translateY(0px) rotate(0deg); opacity: 0.2; }
+      50% { transform: translateY(-25px) rotate(180deg); opacity: 0.6; }
+      100% { transform: translateY(0px) rotate(360deg); opacity: 0.2; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+
+  <nav class="sticky top-0 z-40 bg-[#0d1322]/90 backdrop-blur-md border-b border-arcade-border px-4 lg:px-8 py-3.5">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center text-xl shadow-lg shadow-indigo-500/30">
+          🎮
+        </div>
+        <div>
+          <h1 class="text-lg sm:text-xl font-black tracking-tight text-white flex items-center gap-2 font-jua">
+            우리 반 AI 게임 아케이드
+            <span class="text-xs font-normal font-sans px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">STUDENT SHOWCASE</span>
+          </h1>
+          <p class="text-xs text-slate-400">포스터를 살아 움직이는 게임으로 만든 학생들의 창작 갤러리</p>
+        </div>
+      </div>
+
+      <!-- Quick Action & Stats -->
+      <div class="flex items-center gap-3">
+        <div class="hidden sm:flex items-center gap-4 bg-slate-900/80 px-4 py-1.5 rounded-xl border border-slate-800 text-xs text-slate-300">
+          <div><span class="text-slate-500">출품작</span> <strong id="stat-total-games" class="text-indigo-400 font-bold ml-1">5</strong></div>
+          <div class="w-px h-3.5 bg-slate-800"></div>
+          <div><span class="text-slate-500">총 플레이</span> <strong id="stat-total-plays" class="text-amber-400 font-bold ml-1">1,248</strong></div>
+          <div class="w-px h-3.5 bg-slate-800"></div>
+          <div><span class="text-slate-500">칭찬 스티커</span> <strong id="stat-total-likes" class="text-pink-400 font-bold ml-1">420</strong></div>
+        </div>
+
+        <button onclick="openSubmitModal()" class="px-4 py-2 sm:px-5 sm:py-2.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-400 hover:to-pink-400 text-white font-bold text-sm rounded-xl shadow-lg shadow-indigo-500/25 flex items-center gap-2 transition-all transform active:scale-95 font-jua">
+          <i class="fa-solid fa-plus-circle"></i>
+          <span>내 게임 등록하기</span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <header class="bg-gradient-to-b from-[#11182c] via-[#0e1424] to-arcade-bg py-8 px-4 border-b border-slate-800/60 relative overflow-hidden">
+    <div class="absolute -top-24 -right-24 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute top-10 -left-20 w-72 h-72 bg-purple-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+      <div class="max-w-2xl">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold mb-3">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+          포스터 한 장으로 완성된 멋진 웹 미니게임들!
+        </div>
+        <h2 class="text-2xl sm:text-4xl font-extrabold text-white leading-tight font-jua">
+          친구들의 포스터 게임을 플레이하고<br>
+          <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-300 to-pink-400">칭찬과 하트 스티커</span>를 보내주세요!
+        </h2>
+        <p class="text-sm text-slate-400 mt-2">
+          AI 캔버스에 포스터를 올리고 만든 HTML 코드를 붙여넣기만 하면, 누구나 실시간으로 내 게임을 친구들에게 공유할 수 있습니다.
+        </p>
+      </div>
+
+      <!-- Guide Card for Students -->
+      <div class="bg-slate-900/90 border border-slate-700/70 rounded-2xl p-4 sm:p-5 w-full md:w-80 shadow-xl backdrop-blur">
+        <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2 mb-2 font-jua">
+          <span class="text-base">💡</span> 게임 올리는 초간단 3단계
+        </h3>
+        <ol class="text-xs text-slate-300 space-y-2">
+          <li class="flex items-start gap-2">
+            <span class="bg-indigo-600/40 text-indigo-300 w-4 h-4 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">1</span>
+            <span>AI 캔버스에서 완성된 게임 코드 복사</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="bg-indigo-600/40 text-indigo-300 w-4 h-4 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">2</span>
+            <span>우측 상단 <strong>[내 게임 등록하기]</strong> 클릭</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="bg-indigo-600/40 text-indigo-300 w-4 h-4 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">3</span>
+            <span>포스터 사진과 코드를 넣으면 즉시 등록 완료!</span>
+          </li>
+        </ol>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto w-full px-4 lg:px-8 py-8 flex-1">
+    
+    <!-- Filter, Search & Sort Control Bar -->
+    <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 mb-8 bg-arcade-card border border-arcade-border p-3 sm:p-4 rounded-2xl shadow-lg">
+      
+      <!-- Genre Filter Pills -->
+      <div class="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 custom-scroll text-xs sm:text-sm">
+        <button onclick="setFilter('all')" class="filter-btn active px-3.5 py-2 rounded-xl font-bold whitespace-nowrap transition-all bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-jua" data-category="all">
+          🎮 전체보기 (<span id="count-all">0</span>)
+        </button>
+        <button onclick="setFilter('cooking')" class="filter-btn px-3.5 py-2 rounded-xl font-bold whitespace-nowrap transition-all bg-slate-800 text-slate-300 hover:bg-slate-700 font-jua" data-category="cooking">
+          🥘 타이쿤 & 요리
+        </button>
+        <button onclick="setFilter('action')" class="filter-btn px-3.5 py-2 rounded-xl font-bold whitespace-nowrap transition-all bg-slate-800 text-slate-300 hover:bg-slate-700 font-jua" data-category="action">
+          🏃 러너 & 액션
+        </button>
+        <button onclick="setFilter('quiz')" class="filter-btn px-3.5 py-2 rounded-xl font-bold whitespace-nowrap transition-all bg-slate-800 text-slate-300 hover:bg-slate-700 font-jua" data-category="quiz">
+          🧩 퀴즈 & 학습
+        </button>
+        <button onclick="setFilter('escape')" class="filter-btn px-3.5 py-2 rounded-xl font-bold whitespace-nowrap transition-all bg-slate-800 text-slate-300 hover:bg-slate-700 font-jua" data-category="escape">
+          🗝️ 탈출 & 퍼즐
+        </button>
+      </div>
+
+      <!-- Search & Class selector -->
+      <div class="flex items-center gap-2">
+        <div class="relative flex-1 sm:w-64">
+          <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+          <input type="text" id="search-input" oninput="handleSearch()" placeholder="게임 제목, 학생 이름 검색..." class="w-full pl-8 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors">
+        </div>
+
+        <select id="sort-select" onchange="handleSort()" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-300 focus:outline-none focus:border-indigo-500 cursor-pointer">
+          <option value="recent">최신순</option>
+          <option value="likes">인기(좋아요)순</option>
+          <option value="plays">플레이순</option>
+        </select>
+      </div>
+    </div>
+
+    <section>
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2 font-jua">
+          <span>🌟</span> 등록된 학생 작품 목록 <span id="gallery-count-badge" class="text-xs bg-indigo-500/20 text-indigo-300 px-2.5 py-0.5 rounded-full border border-indigo-500/30">5개</span>
+        </h3>
+        <span class="text-xs text-slate-400">카드를 클릭하여 게임을 바로 즐겨보세요!</span>
+      </div>
+
+      <!-- Games Grid -->
+      <div id="games-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Dynamic Cards rendered via JavaScript -->
+      </div>
+
+      <!-- Empty State -->
+      <div id="empty-state" class="hidden py-16 text-center bg-arcade-card rounded-3xl border border-slate-800 p-8">
+        <div class="text-6xl mb-3">🔍</div>
+        <h4 class="text-xl font-bold text-slate-200 font-jua">조건에 맞는 게임이 없습니다</h4>
+        <p class="text-sm text-slate-400 mt-1">검색어를 바꾸거나 다른 장르를 선택해 보세요.</p>
+        <button onclick="resetFilters()" class="mt-4 px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-500 transition-colors font-jua">
+          필터 초기화
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="bg-[#090d17] border-t border-slate-800/80 py-6 px-4 text-center text-xs text-slate-400 mt-auto">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">🏫</span>
+        <span>학생 디지털 리터러시 & AI 융합 창작 수업 프로젝트</span>
+      </div>
+      <p class="text-slate-400">
+        AI 캔버스로 구현한 학생 미니게임 아카이브 | 언제든 자유롭게 수정 및 공유할 수 있습니다.
+      </p>
+    </div>
+  </footer>
+
+  <div id="player-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex flex-col items-center justify-center p-2 sm:p-4">
+    <div class="w-full max-w-5xl bg-[#11192e] border-2 border-indigo-500/60 rounded-2xl shadow-2xl flex flex-col h-[92vh] max-h-[850px] overflow-hidden">
+      
+      <!-- Player Header -->
+      <div class="px-4 py-3 bg-[#0c1222] border-b border-slate-800 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <div id="modal-game-icon" class="w-9 h-9 rounded-xl bg-indigo-600/30 border border-indigo-400/40 flex items-center justify-center text-xl shrink-0">
+            🥘
+          </div>
+          <div class="truncate">
+            <div class="flex items-center gap-2">
+              <h3 id="modal-game-title" class="text-sm sm:text-base font-black text-white truncate font-jua">코뿔소 감자탕 요리대회</h3>
+              <span id="modal-game-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 shrink-0">타이쿤</span>
+            </div>
+            <p id="modal-student-author" class="text-[11px] text-slate-400 truncate">제작: 6학년 2반 김지민 학생 포스터 기반</p>
+          </div>
+        </div>
+
+        <!-- Action Controls -->
+        <div class="flex items-center gap-2 shrink-0">
+          <button onclick="togglePosterModal()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs rounded-xl border border-slate-700 flex items-center gap-1.5 transition-colors" title="원본 포스터 보기">
+            <i class="fa-solid fa-image"></i>
+            <span class="hidden sm:inline">원본 포스터</span>
+          </button>
+          <button onclick="reloadGameFrame()" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-700 transition-colors text-xs" title="게임 다시시작">
+            <i class="fa-solid fa-rotate-right"></i>
+          </button>
+          <button onclick="toggleFullScreenPlayer()" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-700 transition-colors text-xs" title="전체화면">
+            <i class="fa-solid fa-expand"></i>
+          </button>
+          <button onclick="closePlayerModal()" class="p-2 bg-rose-600/80 hover:bg-rose-600 text-white rounded-xl transition-colors text-xs ml-1" title="닫기">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Player Screen (Iframe Container) -->
+      <div class="flex-1 bg-black relative flex items-center justify-center overflow-hidden">
+        <iframe id="game-frame" class="w-full h-full border-0 bg-slate-950" sandbox="allow-scripts allow-same-origin allow-pointer-lock" title="Student Game Frame"></iframe>
+        
+        <!-- Loading Spinner -->
+        <div id="frame-loader" class="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center gap-3 transition-opacity duration-300">
+          <div class="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+          <span class="text-xs text-indigo-300 font-bold font-jua">게임을 불러오는 중... 🚀</span>
+        </div>
+      </div>
+
+      <!-- Player Bottom Panel: Reactions & Comments -->
+      <div class="bg-[#0e1528] border-t border-slate-800/80 px-4 py-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div class="flex items-center gap-2">
+          <span class="text-slate-400 font-semibold font-jua">칭찬 스티커 보내기:</span>
+          <div class="flex items-center gap-1.5" id="sticker-container">
+            <button onclick="sendSticker('🔥')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg active:scale-95 transition-all">🔥 최고예요!</button>
+            <button onclick="sendSticker('👏')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg active:scale-95 transition-all">👏 대단해요!</button>
+            <button onclick="sendSticker('🏆')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg active:scale-95 transition-all">🏆 1등 감!</button>
+            <button onclick="sendSticker('💡')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg active:scale-95 transition-all">💡 기발해요!</button>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button id="like-btn-player" onclick="toggleCurrentGameLike()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-pink-500/20 text-pink-300 border border-pink-500/30 hover:bg-pink-500/30 active:scale-95 transition-all font-bold">
+            <i class="fa-solid fa-heart text-pink-400"></i>
+            <span id="player-like-count">0</span>
+          </button>
+          <button onclick="copyGameShareLink()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl transition-all">
+            <i class="fa-solid fa-share-nodes mr-1"></i> 공유하기
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="poster-modal" class="fixed inset-0 bg-black/90 z-[60] hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full overflow-hidden p-4 shadow-2xl relative">
+      <div class="flex items-center justify-between mb-3">
+        <h4 class="text-sm font-bold text-amber-300 font-jua flex items-center gap-2">
+          <span>📜</span> 학생이 직접 만든 원본 포스터
+        </h4>
+        <button onclick="togglePosterModal()" class="text-slate-400 hover:text-white text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="w-full max-h-[70vh] overflow-auto rounded-xl bg-black/50 border border-slate-800 flex items-center justify-center">
+        <img id="poster-viewer-img" src="" alt="원본 포스터" class="max-w-full max-h-[65vh] object-contain rounded-lg">
+      </div>
+      <p id="poster-viewer-caption" class="text-xs text-slate-400 mt-3 text-center">
+        이 포스터의 날짜, 메뉴, 보상 규칙이 게임 속에 그대로 살아 움직입니다!
+      </p>
+    </div>
+  </div>
+
+  <div id="submit-modal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-[#11192e] border-2 border-indigo-500/70 rounded-3xl max-w-xl w-full p-5 sm:p-7 shadow-2xl my-8 relative">
+      <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">🚀</span>
+          <div>
+            <h3 class="text-lg font-black text-white font-jua">새 학생 게임 등록하기</h3>
+            <p class="text-xs text-indigo-300">내가 만든 AI 게임을 친구들에게 뽐내보세요!</p>
+          </div>
+        </div>
+        <button onclick="closeSubmitModal()" class="text-slate-400 hover:text-white text-xl">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="game-upload-form" onsubmit="handleGameSubmit(event)" class="space-y-4 text-xs">
+        <!-- Student Info -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">학생 이름 *</label>
+            <input type="text" id="form-author" required placeholder="예: 김지민" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">학년 및 학급 *</label>
+            <input type="text" id="form-class" required placeholder="예: 6학년 2반" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+        </div>
+
+        <!-- Game Title & Category -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="sm:col-span-2">
+            <label class="block text-slate-300 font-bold mb-1">게임 제목 *</label>
+            <input type="text" id="form-title" required placeholder="예: 코뿔소 감자탕 요리대회" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">게임 장르 *</label>
+            <select id="form-category" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-200 focus:outline-none focus:border-indigo-500">
+              <option value="cooking">🥘 요리/타이쿤</option>
+              <option value="action">🏃 액션/러너</option>
+              <option value="quiz">🧩 퀴즈/학습</option>
+              <option value="escape">🗝️ 탈출/퍼즐</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label class="block text-slate-300 font-bold mb-1">게임 설명 & 승리 조건 *</label>
+          <input type="text" id="form-desc" required placeholder="예: 60초 동안 재료를 넣어 완성하면 황금 트로피를 획득하는 타이쿤 게임!" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-200 focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <!-- Poster Image Upload / Selection -->
+        <div>
+          <label class="block text-slate-300 font-bold mb-1">원본 포스터 이미지 첨부 (또는 링크) *</label>
+          <div class="flex items-center gap-2">
+            <label class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-slate-300 cursor-pointer flex items-center gap-1.5 transition-colors">
+              <i class="fa-solid fa-upload text-indigo-400"></i>
+              <span>내 사진 파일 선택</span>
+              <input type="file" id="form-poster-file" accept="image/*" class="hidden" onchange="handlePosterFileUpload(event)">
+            </label>
+            <span class="text-slate-500">또는</span>
+            <input type="url" id="form-poster-url" placeholder="이미지 주소 붙여넣기" class="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+          <div id="poster-preview-box" class="mt-2 hidden flex items-center gap-3 bg-slate-950 p-2 rounded-xl border border-slate-800">
+            <img id="poster-preview-img" src="" alt="포스터 미리보기" class="w-12 h-14 object-cover rounded-lg border border-slate-700">
+            <span class="text-emerald-400 font-medium text-[11px]"><i class="fa-solid fa-circle-check mr-1"></i> 포스터가 정상적으로 첨부되었습니다.</span>
+          </div>
+        </div>
+
+        <!-- Game Code (HTML) or URL -->
+        <div>
+          <label class="block text-slate-300 font-bold mb-1">
+            AI 캔버스 게임 HTML 전체 코드 (또는 공유 URL) *
+            <span class="text-indigo-400 font-normal ml-1">(AI가 만들어준 HTML 파일 내용을 그대로 붙여넣기)</span>
+          </label>
+          <textarea id="form-code" rows="5" required placeholder="<!DOCTYPE html><html>... AI가 작성한 전체 HTML 코드를 여기에 붙여넣으세요" class="w-full px-3 py-2 bg-slate-900 font-mono text-[11px] border border-slate-700 rounded-xl text-slate-200 focus:outline-none focus:border-indigo-500 leading-relaxed custom-scroll"></textarea>
+        </div>
+
+        <!-- Submit Buttons -->
+        <div class="pt-3 flex items-center justify-end gap-2 border-t border-slate-800">
+          <button type="button" onclick="closeSubmitModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition-colors">
+            취소
+          </button>
+          <button type="submit" class="px-6 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/30 transition-all font-jua">
+            등록하기 🚀
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast-message" class="fixed bottom-6 left-1/2 -translate-x-1/2 px-5 py-3 rounded-2xl bg-slate-900/95 border border-indigo-500/50 text-white text-xs sm:text-sm font-bold shadow-2xl flex items-center gap-2 pointer-events-none opacity-0 transform translate-y-4 transition-all duration-300 z-50">
+    <span id="toast-icon">✨</span>
+    <span id="toast-text">알림 메시지</span>
+  </div>
+
+  <script>
+    // Web Audio Synthesizer for UI Effects
+    let audioCtx = null;
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    function playBeep(freq = 520, duration = 0.1, type = 'sine') {
+      try {
+        const ctx = getAudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + duration);
+      } catch (e) {
+        // audio muted or restricted
+      }
+    }
+
+    function playFanfare() {
+      playBeep(440, 0.1);
+      setTimeout(() => playBeep(554.37, 0.1), 100);
+      setTimeout(() => playBeep(659.25, 0.15), 200);
+      setTimeout(() => playBeep(880, 0.3), 320);
+    }
+
+    const INITIAL_GAMES = [
+      {
+        id: 'gamjatang_contest',
+        title: '코뿔소 감자탕 축제 요리대회 🍲',
+        author: '김지민',
+        gradeClass: '6학년 2반',
+        category: 'cooking',
+        genreName: '요리/타이쿤',
+        icon: '🦏',
+        color: 'from-amber-600 to-orange-500',
+        posterImg: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80',
+        posterDetail: '9월 17일 오후 6시 코뿔소 본점에서 열리는 감자탕 축제 초대장 포스터 (등뼈 & 묵은지 레시피 및 황금 트로피)',
+        description: '포스터의 날짜와 메뉴를 살려 뚝배기에 알맞은 재료를 담고 황금 감자탕 트로피 🏆를 차지하세요!',
+        plays: 482,
+        likes: 184,
+        isLiked: false,
+        createdAt: '2026-09-18',
+        // Embedding the interactive gamjatang game as srcdoc
+        codeSnippet: `<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <script src="https://cdn.tailwindcss.com"><\/script>
+  <style>body{font-family:sans-serif;user-select:none;touch-action:manipulation;}</style>
+</head>
+<body class="bg-amber-950 text-slate-100 min-h-screen flex flex-col items-center justify-between p-4">
+  <header class="w-full max-w-md bg-stone-900/90 border border-amber-500 rounded-2xl p-3 flex justify-between items-center shadow-lg">
+    <div>
+      <h1 class="text-base font-extrabold text-amber-300">🦏 코뿔소 감자탕 축제</h1>
+      <p class="text-xs text-amber-200/80">9월 17일 오후 6시 본점 대회</p>
+    </div>
+    <div class="flex gap-2 text-right">
+      <div class="bg-black/40 px-2 py-1 rounded-lg"><span class="text-[10px] block text-stone-400">시간</span><strong id="time" class="text-yellow-400">45s</strong></div>
+      <div class="bg-black/40 px-2 py-1 rounded-lg"><span class="text-[10px] block text-stone-400">점수</span><strong id="score" class="text-orange-400">0</strong></div>
+    </div>
+  </header>
+  <div class="w-full max-w-md bg-stone-900 border border-amber-600/40 rounded-2xl p-3 my-2 text-center">
+    <span class="text-xs font-bold text-amber-400 block mb-1">🎯 현재 주문: <span id="recipe-name" class="text-yellow-300">정통 등뼈 감자탕</span></span>
+    <div id="req-box" class="flex justify-center gap-2 text-xs font-semibold">🍖 등뼈(2) + 🥔 감자(2) + 🥬 묵은지(1)</div>
+  </div>
+  <div class="relative w-56 h-40 bg-stone-800 rounded-b-[4rem] rounded-t-2xl border-4 border-stone-600 flex items-center justify-center p-2 shadow-2xl">
+    <div id="pot" class="w-full h-full bg-gradient-to-b from-red-600 to-amber-900 rounded-b-[3.5rem] rounded-t-xl flex flex-wrap items-center justify-center gap-1 p-2">
+      <span id="pot-empty" class="text-xs text-amber-200/70">재료를 클릭하여 넣으세요!</span>
+    </div>
+  </div>
+  <div class="flex gap-2 mt-2">
+    <button onclick="serve()" class="px-5 py-2 bg-gradient-to-r from-amber-500 to-yellow-400 text-stone-950 font-black rounded-xl text-sm shadow active:scale-95">🍲 완성 및 서빙!</button>
+    <button onclick="resetPot()" class="px-3 py-2 bg-stone-800 text-stone-300 font-bold rounded-xl text-xs active:scale-95">비우기 🗑️</button>
+  </div>
+  <div class="w-full max-w-md bg-stone-900/90 border border-stone-700 rounded-2xl p-2.5 mt-3 grid grid-cols-4 gap-2">
+    <button onclick="add('🍖')" class="p-2 bg-stone-800 rounded-xl flex flex-col items-center active:scale-90"><span class="text-2xl">🍖</span><span class="text-[10px] font-bold mt-1">등뼈</span></button>
+    <button onclick="add('🥔')" class="p-2 bg-stone-800 rounded-xl flex flex-col items-center active:scale-90"><span class="text-2xl">🥔</span><span class="text-[10px] font-bold mt-1">감자</span></button>
+    <button onclick="add('🥬')" class="p-2 bg-stone-800 rounded-xl flex flex-col items-center active:scale-90"><span class="text-2xl">🥬</span><span class="text-[10px] font-bold mt-1">묵은지</span></button>
+    <button onclick="add('✨')" class="p-2 bg-stone-800 rounded-xl flex flex-col items-center active:scale-90"><span class="text-2xl">✨</span><span class="text-[10px] font-bold mt-1">들깨</span></button>
+  </div>
+  <div id="modal" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center p-4">
+    <div class="bg-stone-900 border border-amber-500 rounded-2xl p-5 text-center max-w-xs w-full">
+      <h3 class="text-2xl mb-1">🏆</h3>
+      <h4 class="text-lg font-black text-amber-300">황금 감자탕 트로피 획득!</h4>
+      <p class="text-xs text-stone-300 mt-2" id="final-desc">코뿔소 본점 최고의 셰프로 인정받았습니다!</p>
+      <button onclick="restart()" class="mt-4 px-4 py-2 bg-amber-500 text-stone-950 font-bold text-xs rounded-xl">다시 플레이</button>
+    </div>
+  </div>
+  <script>
+    let pot=[], score=0, time=45, timer;
+    function add(item){ pot.push(item); renderPot(); }
+    function resetPot(){ pot=[]; renderPot(); }
+    function renderPot(){
+      const el = document.getElementById('pot');
+      if(pot.length === 0){ el.innerHTML = '<span class="text-xs text-amber-200/70">재료를 클릭하여 넣으세요!</span>'; return; }
+      el.innerHTML = pot.map(i => '<span class="text-xl animate-bounce">'+i+'</span>').join('');
+    }
+    function serve(){
+      const bones = pot.filter(i => i==='🍖').length;
+      const potatoes = pot.filter(i => i==='🥔').length;
+      const kimchi = pot.filter(i => i==='🥬').length;
+      if(bones >= 2 && potatoes >= 2 && kimchi >= 1){
+        score += 300; document.getElementById('score').innerText = score;
+        resetPot();
+      } else {
+        score = Math.max(0, score-50); document.getElementById('score').innerText = score;
+      }
+    }
+    function restart(){
+      score=0; time=45; pot=[]; renderPot();
+      document.getElementById('modal').classList.add('hidden');
+      document.getElementById('score').innerText = score;
+      clearInterval(timer);
+      timer = setInterval(()=>{
+        time--; document.getElementById('time').innerText = time+'s';
+        if(time<=0){ clearInterval(timer); document.getElementById('modal').classList.remove('hidden'); }
+      }, 1000);
+    }
+    restart();
+  <\/script>
+</body>
+</html>`
+      },
+      {
+        id: 'space_trash',
+        title: '우주 쓰레기 청소 대작전 🚀',
+        author: '이서연',
+        gradeClass: '6학년 1반',
+        category: 'action',
+        genreName: '러너/액션',
+        icon: '🌌',
+        color: 'from-blue-600 to-cyan-500',
+        posterImg: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80',
+        posterDetail: '지구 환경의 날 기념 포스터: 궤도를 도는 우주 쓰레기를 수거하여 지구를 지키자!',
+        description: '좌우로 우주선을 조종해 폐인공위성을 피하고 재활용 캡슐을 모으는 스릴 넘치는 아케이드!',
+        plays: 340,
+        likes: 112,
+        isLiked: false,
+        createdAt: '2026-09-19',
+        codeSnippet: `<!DOCTYPE html><html><head><meta charset="UTF-8"><script src="https://cdn.tailwindcss.com"><\/script></head><body class="bg-slate-950 text-white h-screen flex flex-col items-center justify-center p-4"><div class="text-center"><h2 class="text-xl font-bold text-cyan-400 mb-2">🚀 우주 쓰레기 청소 대작전</h2><p class="text-xs text-slate-400 mb-4">포스터 속 재활용 레이저를 발사하여 별을 모으세요!</p><div class="w-64 h-64 bg-slate-900 border border-cyan-500/50 rounded-2xl flex items-center justify-center relative overflow-hidden"><span class="text-4xl animate-pulse">🛰️ ✨ 🌍</span></div><p class="text-xs text-emerald-400 mt-3">점수: 1,500점 달성!</p></div></body></html>`
+      },
+      {
+        id: 'school_history_quiz',
+        title: '우리 학교 역사 탐험 퀴즈쇼 🏫',
+        author: '박도현',
+        gradeClass: '5학년 3반',
+        category: 'quiz',
+        genreName: '퀴즈/학습',
+        icon: '📚',
+        color: 'from-emerald-600 to-teal-500',
+        posterImg: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=600&q=80',
+        posterDetail: '개교기념일 탐구 포스터: 우리 학교의 교목, 교화, 역사적 장소를 알아맞히는 인터랙티브 퀴즈',
+        description: '포스터 속 숨겨진 단서들을 찾아 퀴즈를 풀고 학교 명예 박사 훈장을 받아보세요!',
+        plays: 215,
+        likes: 67,
+        isLiked: false,
+        createdAt: '2026-09-20',
+        codeSnippet: `<!DOCTYPE html><html><head><meta charset="UTF-8"><script src="https://cdn.tailwindcss.com"><\/script></head><body class="bg-stone-900 text-white h-screen flex flex-col items-center justify-center p-4"><div class="text-center max-w-sm"><h2 class="text-xl font-bold text-emerald-400 mb-2">🏫 우리 학교 역사 탐험</h2><p class="text-xs text-stone-300 mb-4">Q. 우리 학교의 교화(학교 꽃)는 무엇일까요?</p><div class="flex flex-col gap-2"><button onclick="this.className='p-2 bg-emerald-600 rounded-xl text-xs font-bold'" class="p-2 bg-stone-800 rounded-xl text-xs">1. 장미 (정답!)</button><button class="p-2 bg-stone-800 rounded-xl text-xs">2. 해바라기</button></div></div></body></html>`
+      },
+      {
+        id: 'magic_carrot_escape',
+        title: '급식실을 탈출한 마법 당근 🥕',
+        author: '정유진',
+        gradeClass: '4학년 2반',
+        category: 'escape',
+        genreName: '탈출/퍼즐',
+        icon: '🥕',
+        color: 'from-orange-500 to-amber-500',
+        posterImg: 'https://images.unsplash.com/photo-1598170845058-32b9d6a5c731?auto=format&fit=crop&w=600&q=80',
+        posterDetail: '편식 예방 포스터: 마법 당근의 신비한 모험과 비타민 A 영양소 획득기',
+        description: '도마와 숟가락 장애물을 피해 무사히 어린이 접시의 골인 지점까지 이동하는 퍼즐 게임!',
+        plays: 140,
+        likes: 38,
+        isLiked: false,
+        createdAt: '2026-09-20',
+        codeSnippet: `<!DOCTYPE html><html><head><meta charset="UTF-8"><script src="https://cdn.tailwindcss.com"><\/script></head><body class="bg-emerald-950 text-white h-screen flex flex-col items-center justify-center p-4"><div class="text-center"><h2 class="text-xl font-bold text-orange-400 mb-2">🥕 마법 당근의 급식실 탈출</h2><p class="text-xs text-stone-300 mb-3">장애물을 피해 영양소 스타를 모으세요!</p><span class="text-5xl">🥕 ➡️ 🍽️</span></div></body></html>`
+      },
+      {
+        id: 'library_mystery',
+        title: '도서관 속 사라진 책갈피를 찾아라 📖',
+        author: '강하은',
+        gradeClass: '5학년 4반',
+        category: 'quiz',
+        genreName: '퍼즐/스토리',
+        icon: '🔍',
+        color: 'from-purple-600 to-indigo-600',
+        posterImg: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=600&q=80',
+        posterDetail: '독서 주간 포스터: 십진분류표를 따라 숨겨진 황금 책갈피를 찾는 미스터리 탐정단',
+        description: '포스터의 서가 분류 번호를 힌트 삼아 비밀 암호를 해독하는 방탈출형 스토리 게임!',
+        plays: 71,
+        likes: 19,
+        isLiked: false,
+        createdAt: '2026-09-21',
+        codeSnippet: `<!DOCTYPE html><html><head><meta charset="UTF-8"><script src="https://cdn.tailwindcss.com"><\/script></head><body class="bg-indigo-950 text-white h-screen flex flex-col items-center justify-center p-4"><div class="text-center"><h2 class="text-xl font-bold text-indigo-300 mb-2">📖 도서관 사라진 책갈피</h2><p class="text-xs text-indigo-200">십진분류표 800번 문학 서가에서 첫 번째 단서를 발견했습니다!</p></div></body></html>`
+      }
+    ];
+
+    // App state
+    let games = [...INITIAL_GAMES];
+    let currentFilter = 'all';
+    let currentSort = 'recent';
+    let searchQuery = '';
+    let activePlayingGame = null;
+    let uploadedPosterDataUrl = '';
+
+    function renderGallery() {
+      const grid = document.getElementById('games-grid');
+      const emptyState = document.getElementById('empty-state');
+      grid.innerHTML = '';
+
+      // Filter
+      let filtered = games.filter(g => {
+        const matchesCategory = currentFilter === 'all' || g.category === currentFilter;
+        const matchesSearch = g.title.toLowerCase().includes(searchQuery) ||
+                              g.author.toLowerCase().includes(searchQuery) ||
+                              g.gradeClass.toLowerCase().includes(searchQuery) ||
+                              g.description.toLowerCase().includes(searchQuery);
+        return matchesCategory && matchesSearch;
+      });
+
+      // Sort
+      if (currentSort === 'likes') {
+        filtered.sort((a, b) => b.likes - a.likes);
+      } else if (currentSort === 'plays') {
+        filtered.sort((a, b) => b.plays - a.plays);
+      } else {
+        filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      }
+
+      // Update counters
+      document.getElementById('gallery-count-badge').innerText = `${filtered.length}개`;
+      document.getElementById('count-all').innerText = games.length;
+
+      // Update Header Overall stats
+      const totalPlays = games.reduce((acc, cur) => acc + cur.plays, 0);
+      const totalLikes = games.reduce((acc, cur) => acc + cur.likes, 0);
+      document.getElementById('stat-total-games').innerText = games.length;
+      document.getElementById('stat-total-plays').innerText = totalPlays.toLocaleString();
+      document.getElementById('stat-total-likes').innerText = totalLikes.toLocaleString();
+
+      if (filtered.length === 0) {
+        emptyState.classList.remove('hidden');
+        return;
+      } else {
+        emptyState.classList.add('hidden');
+      }
+
+      // Render cards
+      filtered.forEach(game => {
+        const card = document.createElement('div');
+        card.className = 'bg-arcade-card border border-arcade-border rounded-2xl overflow-hidden hover:border-indigo-500/60 transition-all duration-300 shadow-xl flex flex-col group';
+
+        card.innerHTML = `
+          <!-- Poster Thumbnail & Badges -->
+          <div class="relative h-44 w-full bg-slate-950 overflow-hidden cursor-pointer" onclick="openPlayerModal('${game.id}')">
+            <img src="${game.posterImg}" alt="${game.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-80 group-hover:opacity-100" onerror="this.src='https://placehold.co/600x400/1e293b/94a3b8?text=Poster'">
+            <div class="absolute inset-0 bg-gradient-to-t from-arcade-card via-transparent to-black/40"></div>
+            
+            <!-- Category Badge -->
+            <span class="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[11px] font-bold bg-black/60 backdrop-blur border border-white/20 text-white font-jua">
+              ${game.icon} ${game.genreName}
+            </span>
+
+            <!-- Original Poster Quick View Tag -->
+            <button onclick="event.stopPropagation(); openPosterPreview('${game.id}')" class="absolute top-3 right-3 px-2 py-1 rounded-lg text-[10px] font-semibold bg-slate-900/80 hover:bg-indigo-600 text-slate-200 border border-slate-700 transition-colors flex items-center gap-1">
+              <i class="fa-solid fa-image"></i> 포스터
+            </button>
+
+            <!-- Play hover overlay -->
+            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+              <span class="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-xl shadow-lg shadow-indigo-600/50 transform group-hover:scale-110 transition-transform">
+                <i class="fa-solid fa-play ml-0.5"></i>
+              </span>
+            </div>
+          </div>
+
+          <!-- Card Body -->
+          <div class="p-4 flex-1 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between text-[11px] text-slate-400 mb-1.5">
+                <span class="font-bold text-indigo-400"><i class="fa-solid fa-user-graduate mr-1"></i>${game.author} (${game.gradeClass})</span>
+                <span><i class="fa-solid fa-gamepad mr-1"></i>${game.plays}회 플레이</span>
+              </div>
+              <h4 class="text-base font-extrabold text-white group-hover:text-indigo-300 transition-colors font-jua line-clamp-1">
+                ${game.title}
+              </h4>
+              <p class="text-xs text-slate-400 mt-1.5 line-clamp-2 leading-relaxed">
+                ${game.description}
+              </p>
+            </div>
+
+            <!-- Card Bottom Action -->
+            <div class="pt-4 mt-4 border-t border-slate-800/80 flex items-center justify-between">
+              <button onclick="toggleCardLike('${game.id}', event)" class="flex items-center gap-1.5 text-xs font-bold ${game.isLiked ? 'text-pink-400' : 'text-slate-400'} hover:text-pink-400 transition-colors">
+                <i class="${game.isLiked ? 'fa-solid text-pink-500' : 'fa-regular'} fa-heart text-sm"></i>
+                <span id="card-like-${game.id}">${game.likes}</span>
+              </button>
+
+              <button onclick="openPlayerModal('${game.id}')" class="px-3.5 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-xl text-xs font-bold transition-all shadow-md font-jua flex items-center gap-1">
+                <span>게임 시작</span>
+                <i class="fa-solid fa-arrow-right text-[10px]"></i>
+              </button>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function setFilter(category) {
+      currentFilter = category;
+      playBeep(480, 0.08);
+
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        if (btn.dataset.category === category) {
+          btn.className = 'filter-btn active px-3.5 py-2 rounded-xl font-bold whitespace-nowrap transition-all bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-jua';
+        } else {
+          btn.className = 'filter-btn px-3.5 py-2 rounded-xl font-bold whitespace-nowrap transition-all bg-slate-800 text-slate-300 hover:bg-slate-700 font-jua';
+        }
+      });
+
+      renderGallery();
+    }
+
+    function handleSearch() {
+      searchQuery = document.getElementById('search-input').value.trim().toLowerCase();
+      renderGallery();
+    }
+
+    function handleSort() {
+      currentSort = document.getElementById('sort-select').value;
+      playBeep(440, 0.06);
+      renderGallery();
+    }
+
+    function resetFilters() {
+      document.getElementById('search-input').value = '';
+      searchQuery = '';
+      setFilter('all');
+    }
+
+    function openPlayerModal(gameId) {
+      const game = games.find(g => g.id === gameId);
+      if (!game) return;
+
+      activePlayingGame = game;
+      game.plays++;
+
+      playBeep(620, 0.12);
+
+      // Setup UI
+      document.getElementById('modal-game-title').innerText = game.title;
+      document.getElementById('modal-game-icon').innerText = game.icon;
+      document.getElementById('modal-game-badge').innerText = game.genreName;
+      document.getElementById('modal-student-author').innerText = `제작: ${game.gradeClass} ${game.author} 학생의 포스터 기반`;
+      document.getElementById('player-like-count').innerText = game.likes;
+
+      const likeBtn = document.getElementById('like-btn-player');
+      if (game.isLiked) {
+        likeBtn.classList.add('bg-pink-500/40', 'text-pink-200');
+      } else {
+        likeBtn.classList.remove('bg-pink-500/40', 'text-pink-200');
+      }
+
+      // Load into iframe
+      const frame = document.getElementById('game-frame');
+      const loader = document.getElementById('frame-loader');
+      loader.classList.remove('opacity-0', 'pointer-events-none');
+
+      frame.srcdoc = game.codeSnippet;
+      frame.onload = () => {
+        setTimeout(() => {
+          loader.classList.add('opacity-0', 'pointer-events-none');
+        }, 300);
+      };
+
+      document.getElementById('player-modal').classList.remove('hidden');
+      renderGallery();
+    }
+
+    function closePlayerModal() {
+      const frame = document.getElementById('game-frame');
+      frame.srcdoc = '';
+      document.getElementById('player-modal').classList.add('hidden');
+      activePlayingGame = null;
+    }
+
+    function reloadGameFrame() {
+      if (!activePlayingGame) return;
+      playBeep(520, 0.08);
+      const frame = document.getElementById('game-frame');
+      frame.srcdoc = activePlayingGame.codeSnippet;
+      showToast('🔄 게임을 다시 시작합니다', '🎮');
+    }
+
+    function toggleFullScreenPlayer() {
+      const frame = document.getElementById('game-frame');
+      if (!document.fullscreenElement) {
+        frame.requestFullscreen?.().catch(() => {
+          showToast('전체화면이 지원되지 않는 브라우저입니다', '⚠️');
+        });
+      } else {
+        document.exitFullscreen?.();
+      }
+    }
+
+    function openPosterPreview(gameId) {
+      const game = games.find(g => g.id === gameId);
+      if (!game) return;
+      playBeep(450, 0.08);
+      document.getElementById('poster-viewer-img').src = game.posterImg;
+      document.getElementById('poster-viewer-caption').innerText = `"${game.title}" - ${game.posterDetail || '학생이 직접 손으로 그린 포스터 작품입니다.'}`;
+      document.getElementById('poster-modal').classList.remove('hidden');
+    }
+
+    function togglePosterModal() {
+      if (activePlayingGame) {
+        openPosterPreview(activePlayingGame.id);
+      } else {
+        document.getElementById('poster-modal').classList.toggle('hidden');
+      }
+    }
+
+    function sendSticker(emoji) {
+      if (!activePlayingGame) return;
+      playBeep(750, 0.15, 'triangle');
+      activePlayingGame.likes++;
+      document.getElementById('player-like-count').innerText = activePlayingGame.likes;
+      showToast(`${emoji} ${activePlayingGame.author} 학생에게 칭찬 스티커를 보냈습니다!`, '🎉');
+      renderGallery();
+    }
+
+    function toggleCurrentGameLike() {
+      if (!activePlayingGame) return;
+      activePlayingGame.isLiked = !activePlayingGame.isLiked;
+      activePlayingGame.likes += activePlayingGame.isLiked ? 1 : -1;
+      document.getElementById('player-like-count').innerText = activePlayingGame.likes;
+      playBeep(activePlayingGame.isLiked ? 680 : 380, 0.1);
+      renderGallery();
+    }
+
+    function toggleCardLike(gameId, event) {
+      event.stopPropagation();
+      const game = games.find(g => g.id === gameId);
+      if (!game) return;
+
+      game.isLiked = !game.isLiked;
+      game.likes += game.isLiked ? 1 : -1;
+      playBeep(game.isLiked ? 680 : 380, 0.1);
+      renderGallery();
+    }
+
+    function copyGameShareLink() {
+      if (!activePlayingGame) return;
+      // Copy URL or notification
+      try {
+        const tempInput = document.createElement('input');
+        tempInput.value = `${window.location.href}#${activePlayingGame.id}`;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+        showToast('🔗 게임 공유 링크가 클립보드에 복사되었습니다!', '📋');
+      } catch (e) {
+        showToast('링크 복사 완료!', '📋');
+      }
+    }
+
+    function openSubmitModal() {
+      playBeep(520, 0.08);
+      document.getElementById('submit-modal').classList.remove('hidden');
+      document.getElementById('form-author').focus();
+    }
+
+    function closeSubmitModal() {
+      document.getElementById('submit-modal').classList.add('hidden');
+      document.getElementById('game-upload-form').reset();
+      uploadedPosterDataUrl = '';
+      document.getElementById('poster-preview-box').classList.add('hidden');
+    }
+
+    function handlePosterFileUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        uploadedPosterDataUrl = event.target.result;
+        document.getElementById('poster-preview-img').src = uploadedPosterDataUrl;
+        document.getElementById('poster-preview-box').classList.remove('hidden');
+        showToast('포스터 이미지가 등록되었습니다!', '📸');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function handleGameSubmit(e) {
+      e.preventDefault();
+
+      const author = document.getElementById('form-author').value.trim();
+      const gradeClass = document.getElementById('form-class').value.trim();
+      const title = document.getElementById('form-title').value.trim();
+      const category = document.getElementById('form-category').value;
+      const desc = document.getElementById('form-desc').value.trim();
+      const urlInput = document.getElementById('form-poster-url').value.trim();
+      const code = document.getElementById('form-code').value.trim();
+
+      // Poster image fallback
+      const poster = uploadedPosterDataUrl || urlInput || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80';
+
+      const genreMap = {
+        cooking: { name: '요리/타이쿤', icon: '🥘', color: 'from-amber-600 to-orange-500' },
+        action: { name: '러너/액션', icon: '🏃', color: 'from-blue-600 to-cyan-500' },
+        quiz: { name: '퀴즈/학습', icon: '🧩', color: 'from-emerald-600 to-teal-500' },
+        escape: { name: '탈출/퍼즐', icon: '🗝️', color: 'from-purple-600 to-indigo-600' }
+      };
+
+      const newGame = {
+        id: 'game_' + Date.now(),
+        title: title,
+        author: author,
+        gradeClass: gradeClass,
+        category: category,
+        genreName: genreMap[category]?.name || '미니게임',
+        icon: genreMap[category]?.icon || '🎮',
+        color: genreMap[category]?.color || 'from-indigo-600 to-purple-600',
+        posterImg: poster,
+        posterDetail: `${author} 학생이 AI 캔버스에 등록한 원본 포스터`,
+        description: desc,
+        plays: 1,
+        likes: 1,
+        isLiked: false,
+        createdAt: new Date().toISOString().split('T')[0],
+        codeSnippet: code
+      };
+
+      // Add to beginning of array
+      games.unshift(newGame);
+
+      playFanfare();
+      closeSubmitModal();
+      renderGallery();
+
+      showToast(`🎉 "${title}" 게임이 아케이드에 등록되었습니다!`, '🚀');
+
+      // Auto open newly registered game in player
+      setTimeout(() => {
+        openPlayerModal(newGame.id);
+      }, 500);
+    }
+
+    let toastTimeout = null;
+    function showToast(text, icon = '✨') {
+      const toast = document.getElementById('toast-message');
+      document.getElementById('toast-icon').innerText = icon;
+      document.getElementById('toast-text').innerText = text;
+
+      toast.classList.remove('opacity-0', 'translate-y-4');
+      toast.classList.add('opacity-100', 'translate-y-0');
+
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', 'translate-y-4');
+      }, 2500);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderGallery();
+    });
+  </script>
+</body>
+</html>
