@@ -119,6 +119,23 @@ function book_() {
   }
 }
 
+/* ── 배포하기 전에 여기서 먼저 확인하세요 ──────────────────
+   편집기 위쪽 함수 목록에서  checkSetup  을 고르고  ▶ 실행  을 누르면,
+   아래 «실행 로그» 에 결과가 나옵니다. 배포와 상관없이 코드만 확인합니다.
+
+   · 로그가 나오면      → 코드가 제대로 붙여넣어진 것입니다
+   · 빨간 오류가 나오면 → 붙여넣기가 덜 됐거나 권한 승인이 안 된 것입니다
+   ──────────────────────────────────────────────────────── */
+function checkSetup() {
+  var ss = book_();
+  var hasKey = !!PropertiesService.getScriptProperties().getProperty('ADMIN_KEY');
+  Logger.log('✅ 코드 정상');
+  Logger.log('작품이 쌓일 시트 : ' + ss.getName());
+  Logger.log('시트 주소        : ' + ss.getUrl());
+  Logger.log('관리자 암호(ADMIN_KEY) : ' + (hasKey ? '설정됨' : '아직 없음 — 삭제 버튼이 안 먹습니다'));
+  return ss.getUrl();
+}
+
 function metaSheet_() {
   var ss = book_();
   var sh = ss.getSheetByName(META_SHEET);
