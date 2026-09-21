@@ -29,4 +29,4 @@ window.SYNC_IDLE_MIN = 5;
    (그 기기에서는 새로고침해도 남지만, 다른 기기에서는 안 보입니다).
    ───────────────────────────────────────────────────────────── */
 
-window.ARCADE_URL = '';
+window.ARCADE_URL = 'https://script.google.com/macros/s/AKfycbxLADz8SD1G1FldY4kMxK0lvOtxIE806GntbubgSygH6u4gqIVrnOq4gZv2NrLMkBws5A/exec';
