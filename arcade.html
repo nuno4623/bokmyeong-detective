@@ -668,6 +668,7 @@
     let activePlayingGame = null;
     let uploadedPoster = null;         // { thumb, full }
     let connected = false;             // 시트에 붙어 있는가
+    let lastError = '';                // 연결이 안 될 때 이유를 띠에 그대로 보여 준다
     let liked = loadLiked();           // 이 기기에서 하트를 누른 게임 id 들
 
     /* ── 관리자 모드 ──
@@ -824,6 +825,7 @@
         const d = await apiGet(adminMode ? { mode: 'list', admin: adminKey } : { mode: 'list' });
         if (!d || !d.ok) throw new Error((d && d.error) || '응답 형식 오류');
         connected = true;
+        lastError = '';
         games = d.games.map(g => Object.assign({}, g, { sample: false }));
         if (adminMode && d.admin === false) {
           adminMode = false;
@@ -831,6 +833,7 @@
         }
       } catch (err) {
         connected = false;
+        lastError = err.message || String(err);
         games = readLocalGames() || seedGames();
         showToast('저장소에 연결하지 못했습니다 — 이 기기에서만 보입니다', '⚠️');
       }
@@ -855,8 +858,10 @@
         box.className = 'mb-4 px-4 py-2.5 rounded-xl border text-xs flex items-center gap-2 bg-emerald-500/10 border-emerald-500/30 text-emerald-300';
         box.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i><span>선생님 저장소에 연결되어 있습니다 — 올린 게임이 <b>모든 기기에서 똑같이</b> 보입니다.</span>';
       } else if (ARCADE) {
-        box.className = 'mb-4 px-4 py-2.5 rounded-xl border text-xs flex items-center gap-2 bg-rose-500/10 border-rose-500/30 text-rose-300';
-        box.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i><span>저장소에 연결하지 못했습니다. 인터넷을 확인해 주세요 — 지금 올리면 <b>이 기기에만</b> 저장됩니다.</span>';
+        box.className = 'mb-4 px-4 py-2.5 rounded-xl border text-xs flex items-start gap-2 bg-rose-500/10 border-rose-500/30 text-rose-300';
+        box.innerHTML = '<i class="fa-solid fa-triangle-exclamation mt-0.5"></i><span>저장소에 연결하지 못했습니다 — 지금 올리면 <b>이 기기에만</b> 저장됩니다.'
+          + (lastError ? '<br><span class="text-rose-400/80">이유: ' + esc(lastError) + '</span>' : '')
+          + '</span>';
       } else {
         box.className = 'mb-4 px-4 py-2.5 rounded-xl border text-xs flex items-center gap-2 bg-amber-500/10 border-amber-500/30 text-amber-200';
         box.innerHTML = '<i class="fa-solid fa-circle-info"></i><span><b>저장소가 아직 연결되지 않았습니다.</b> 올린 게임은 이 기기에만 저장됩니다 (선생님: <code class="px-1 rounded bg-black/30">arcade-apps-script.gs</code> 참고).</span>';

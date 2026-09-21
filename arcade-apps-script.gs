@@ -8,6 +8,16 @@
       스크립트 하나에 doGet/doPost 는 하나씩만 둘 수 있어서,
       스프레드시트와 배포를 따로 만들어야 합니다. (순서는 똑같습니다)
 
+   ■ 어느 스프레드시트에 쌓이나
+      · 스프레드시트에서  확장 프로그램 ▸ Apps Script  로 만들었다면  → 그 스프레드시트
+      · script.google.com 에서 새 프로젝트로 만들었다면
+        → 내 드라이브에 "우리 반 게임 아케이드 (작품 보관소)" 를 알아서 하나 만듭니다
+      · 쓰던 스프레드시트를 지정하고 싶으면
+        → ⚙️ 프로젝트 설정 ▸ 스크립트 속성 에  SHEET_ID  = 그 시트 주소의 가운데 긴 문자열
+           (https://docs.google.com/spreadsheets/d/★이부분★/edit)
+
+      지금 어느 시트에 쌓이는지는 배포 주소 뒤에  ?mode=info  를 붙여서 열면 링크가 나옵니다.
+
    ■ 설정 순서 (한 번만, 약 5분)
 
    1. https://sheets.google.com 에서 새 스프레드시트를 만듭니다.
@@ -73,8 +83,44 @@ var MAX_THUMB  = 45000;    // 썸네일은 셀 하나에 들어가야 한다
 var MAX_BLOB   = 1500000;  // 포스터·코드 한 편당 최대 글자 수
 var MAX_GAMES  = 300;      // 시트가 감당할 만한 상한
 
+/* 어느 스프레드시트에 담을지 정한다.
+
+   1) 스크립트 속성 SHEET_ID 가 있으면 그 시트        ← 쓰던 시트를 지정하고 싶을 때
+   2) 스프레드시트에 붙어 있는 스크립트면 그 시트     ← 확장 프로그램 ▸ Apps Script 로 만든 경우
+   3) 둘 다 아니면 보관용 시트를 하나 만들어 둔다     ← script.google.com 에서 만든 경우
+
+   3번으로 만들어진 시트가 어디 있는지는
+   배포 주소 뒤에 ?mode=info 를 붙여서 열면 링크가 나옵니다. */
+function book_() {
+  var props = PropertiesService.getScriptProperties();
+  var id = props.getProperty('SHEET_ID');
+  if (id) {
+    try {
+      return SpreadsheetApp.openById(id);
+    } catch (err) {
+      throw new Error('스크립트 속성 SHEET_ID 의 스프레드시트를 열 수 없습니다. 주소의 ID 를 다시 확인해 주세요.');
+    }
+  }
+
+  var active = SpreadsheetApp.getActiveSpreadsheet();
+  if (active) return active;
+
+  // 동시에 두 번 만들지 않도록 (첫 요청이 겹칠 때)
+  var lock = LockService.getUserLock();
+  try { lock.waitLock(20000); } catch (err) {}
+  try {
+    id = props.getProperty('SHEET_ID');
+    if (id) return SpreadsheetApp.openById(id);
+    var made = SpreadsheetApp.create('우리 반 게임 아케이드 (작품 보관소)');
+    props.setProperty('SHEET_ID', made.getId());
+    return made;
+  } finally {
+    try { lock.releaseLock(); } catch (err) {}
+  }
+}
+
 function metaSheet_() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = book_();
   var sh = ss.getSheetByName(META_SHEET);
   if (!sh) sh = ss.insertSheet(META_SHEET, 0);
   if (sh.getLastRow() === 0) {
@@ -90,7 +136,7 @@ function metaSheet_() {
 }
 
 function dataSheet_() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = book_();
   var sh = ss.getSheetByName(DATA_SHEET);
   if (!sh) sh = ss.insertSheet(DATA_SHEET);
   if (sh.getLastRow() === 0) {
@@ -203,6 +249,16 @@ function doGet(e) {
   try {
     var p = (e && e.parameter) || {};
     var mode = p.mode || 'list';
+
+    if (mode === 'info') {
+      var ss = book_();
+      return json_({
+        ok: true,
+        sheetName: ss.getName(),
+        sheetUrl: ss.getUrl(),
+        adminKeySet: !!PropertiesService.getScriptProperties().getProperty('ADMIN_KEY')
+      });
+    }
 
     if (mode === 'game') {
       var id = clean_(p.id, 60);
