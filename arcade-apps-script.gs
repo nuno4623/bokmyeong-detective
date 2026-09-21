@@ -34,7 +34,20 @@
       배포 ▸ 배포 관리 ▸ (연필 아이콘) ▸ 버전: 새 버전 ▸ 배포
       로 다시 배포해야 반영됩니다. URL 은 그대로입니다.
 
-   ■ 올라온 게임을 숨기거나 지우려면  ← 선생님용
+   ■ 관리자 모드 열쇠 정하기 (선택, 1분)  ← 이걸 해야 화면에서 바로 지울 수 있습니다
+      1. Apps Script 편집기 왼쪽의  ⚙️ 프로젝트 설정  을 엽니다
+      2. 맨 아래  스크립트 속성  ▸  스크립트 속성 추가
+      3. 속성 =  ADMIN_KEY      값 = 선생님만 아는 암호 (예: mirae-2026-music)
+         · 학생이 눌러 볼 만한 쉬운 말은 피하세요
+         · 이 암호는 깃허브 저장소에 올라가지 않습니다. 여기에만 있습니다
+      4. 저장 → 배포 ▸ 배포 관리 ▸ (연필) ▸ 버전: 새 버전 ▸ 배포
+
+      그다음 아케이드 주소 뒤에  ?admin=암호  를 붙여서 열면
+      (.../arcade.html?admin=mirae-2026-music)
+      각 게임 카드에 «숨기기»·«삭제» 버튼이 생깁니다.
+      암호를 바꾸고 싶으면 위 3번 값만 고치고 다시 배포하면 됩니다.
+
+   ■ 올라온 게임을 시트에서 직접 다루려면  ← 위 방법 대신 써도 됩니다
       «아케이드» 시트에서
         · 숨기기: 그 줄의 «상태» 칸에  숨김  이라고 적으면 목록에서 사라집니다
                   (되돌리려면 그 글자를 지우면 됩니다)
@@ -134,6 +147,37 @@ function readBlob_(id, kind) {
   return out.join('');
 }
 
+/* 관리자 열쇠 확인 — 스크립트 속성에 ADMIN_KEY 를 넣어 두지 않으면 아무도 못 지운다 */
+function adminOk_(key) {
+  var want = PropertiesService.getScriptProperties().getProperty('ADMIN_KEY');
+  if (!want) return false;
+  return String(key || '') === String(want);
+}
+
+/* 한 작품을 통째로 지운다 (목록 한 줄 + 흩어진 조각들) */
+function deleteGame_(id) {
+  var sh = metaSheet_();
+  var row = findRow_(id);
+  if (row > 0) sh.deleteRow(row);
+
+  var ds = dataSheet_();
+  var last = ds.getLastRow();
+  if (last < 2) return;
+  var ids = ds.getRange(2, 1, last - 1, 1).getValues();
+
+  // 뒤에서부터 지워야 남은 줄 번호가 밀리지 않는다. 붙어 있는 줄은 한 번에 지운다.
+  var run = 0;
+  for (var i = ids.length - 1; i >= 0; i--) {
+    if (String(ids[i][0]) === id) {
+      run++;
+    } else if (run) {
+      ds.deleteRows(i + 3, run);
+      run = 0;
+    }
+  }
+  if (run) ds.deleteRows(2, run);
+}
+
 /* ID 로 «아케이드» 시트의 줄 번호 찾기 (없으면 -1) */
 function findRow_(id) {
   var sh = metaSheet_();
@@ -172,6 +216,7 @@ function doGet(e) {
       });
     }
 
+    var admin = adminOk_(p.admin);
     var sh = metaSheet_();
     var last = sh.getLastRow();
     var games = [];
@@ -180,8 +225,10 @@ function doGet(e) {
       for (var i = 0; i < vals.length; i++) {
         var r = vals[i];
         if (!String(r[0]).trim()) continue;
-        if (String(r[9]).trim() === '숨김') continue;     // 선생님이 내린 작품
+        var isHidden = String(r[9]).trim() === '숨김';
+        if (isHidden && !admin) continue;                 // 선생님이 내린 작품
         games.push({
+          hidden: isHidden,
           id: String(r[0]),
           createdAt: r[1] ? new Date(r[1]).getTime() : 0,
           author: String(r[2] || ''),
@@ -195,7 +242,7 @@ function doGet(e) {
         });
       }
     }
-    return json_({ ok: true, now: new Date().getTime(), games: games });
+    return json_({ ok: true, now: new Date().getTime(), admin: admin, games: games });
   } catch (err) {
     return json_({ ok: false, error: String(err) });
   }
@@ -217,6 +264,18 @@ function doPost(e) {
   try {
     var d = JSON.parse(e.postData.contents);
     var action = String(d.action || 'submit');
+
+    if (action === 'hide' || action === 'show' || action === 'delete') {
+      if (!adminOk_(d.key)) return json_({ ok: false, error: '관리자 암호가 맞지 않습니다.' });
+      var gid = clean_(d.id, 60);
+      if (findRow_(gid) < 0) return json_({ ok: false, error: 'not found' });
+      if (action === 'delete') {
+        deleteGame_(gid);
+      } else {
+        metaSheet_().getRange(findRow_(gid), 10).setValue(action === 'hide' ? '숨김' : '');
+      }
+      return json_({ ok: true });
+    }
 
     if (action === 'like' || action === 'play') {
       var id = clean_(d.id, 60);
