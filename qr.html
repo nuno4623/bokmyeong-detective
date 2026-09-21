@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우리 반 AI 게임 아케이드 — QR 안내지</title>
+<!-- 외부 의존성 없음: 인터넷이 느려도 그대로 인쇄됩니다 -->
+<style>
+  :root { --ink:#0b0f19; --muted:#5b6478; --line:#d8dee9; }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; padding:32px 16px;
+    font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+    color:var(--ink); background:#eef1f6;
+    display:flex; flex-direction:column; align-items:center; gap:20px;
+  }
+  .sheet {
+    width:190mm; max-width:100%; background:#fff; border:1px solid var(--line);
+    border-radius:16px; padding:28px 32px 32px; text-align:center;
+    box-shadow:0 10px 30px rgba(15,23,42,.08);
+  }
+  .kicker { font-size:14px; letter-spacing:.14em; color:var(--muted); font-weight:700; }
+  h1 { font-size:34px; margin:10px 0 4px; line-height:1.25; }
+  .sub { font-size:15px; color:var(--muted); margin:0 0 22px; }
+  .qr { width:74mm; height:74mm; display:block; margin:0 auto; }
+  .url {
+    display:inline-block; margin-top:16px; padding:9px 16px;
+    border:1.5px dashed var(--line); border-radius:10px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:14px; word-break:break-all;
+  }
+  ol { text-align:left; max-width:135mm; margin:22px auto 0; padding-left:20px;
+       font-size:14.5px; line-height:1.85; color:#25304a; }
+  .foot { margin-top:22px; padding-top:14px; border-top:1px solid var(--line);
+          font-size:12.5px; color:var(--muted); }
+  .print {
+    padding:11px 22px; border:0; border-radius:10px; background:var(--ink); color:#fff;
+    font-size:14px; font-weight:700; cursor:pointer; font-family:inherit;
+  }
+  @media print {
+    body { background:#fff; padding:0; }
+    .sheet { border:0; box-shadow:none; border-radius:0; width:auto; padding:14mm; }
+    .print { display:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="sheet">
+  <div class="kicker">STUDENT GAME SHOWCASE</div>
+  <h1>🎮 우리 반 AI 게임 아케이드</h1>
+  <p class="sub">친구들이 포스터로 만든 게임을 플레이하고 칭찬 스티커를 보내 주세요!</p>
+
+  <img class="qr" src="img/qr-arcade.svg" alt="게임 아케이드 QR 코드">
+
+  <div class="url">https://nuno4623.github.io/bokmyeong-detective/arcade.html</div>
+
+  <ol>
+    <li>태블릿 카메라로 위 QR 코드를 비춥니다.</li>
+    <li>뜨는 주소를 눌러 아케이드를 엽니다.</li>
+    <li>카드를 누르면 친구의 게임이 바로 시작됩니다.</li>
+    <li>내 게임을 올리려면 오른쪽 위 <b>«내 게임 등록하기»</b> 를 누르세요.</li>
+  </ol>
+
+  <div class="foot">복명초 디지털 리터러시 &amp; AI 융합 창작 수업</div>
+</div>
+
+<button class="print" onclick="window.print()">🖨️ 인쇄하기</button>
+
+</body>
+</html>
