@@ -136,7 +136,7 @@
         <ol class="text-xs text-slate-300 space-y-2">
           <li class="flex items-start gap-2">
             <span class="bg-indigo-600/40 text-indigo-300 w-4 h-4 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">1</span>
-            <span>AI 캔버스에서 완성된 게임 코드 복사</span>
+            <span>AI 캔버스에서 완성된 게임을 <strong>HTML 파일로 내려받기</strong></span>
           </li>
           <li class="flex items-start gap-2">
             <span class="bg-indigo-600/40 text-indigo-300 w-4 h-4 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">2</span>
@@ -144,7 +144,7 @@
           </li>
           <li class="flex items-start gap-2">
             <span class="bg-indigo-600/40 text-indigo-300 w-4 h-4 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">3</span>
-            <span>포스터 사진과 코드를 넣으면 즉시 등록 완료!</span>
+            <span>포스터 사진과 게임 파일을 올리면 등록 완료!</span>
           </li>
         </ol>
       </div>
@@ -395,11 +395,20 @@
 
         <!-- Game Code (HTML) or URL -->
         <div>
-          <label class="block text-slate-300 font-bold mb-1">
-            AI 캔버스 게임 HTML 전체 코드 (또는 공유 URL) *
-            <span class="text-indigo-400 font-normal ml-1">(AI가 만들어준 HTML 파일 내용을 그대로 붙여넣기)</span>
-          </label>
-          <textarea id="form-code" rows="5" required placeholder="<!DOCTYPE html><html>... AI가 작성한 전체 HTML 코드를 여기에 붙여넣으세요" class="w-full px-3 py-2 bg-slate-900 font-mono text-[11px] border border-slate-700 rounded-xl text-slate-200 focus:outline-none focus:border-indigo-500 leading-relaxed custom-scroll"></textarea>
+          <label class="block text-slate-300 font-bold mb-1">내 게임 파일 *</label>
+
+          <div class="flex flex-wrap items-center gap-2 mb-2">
+            <label class="px-3 py-2 bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-500/50 rounded-xl text-indigo-200 cursor-pointer flex items-center gap-1.5 transition-colors font-bold">
+              <i class="fa-solid fa-file-code"></i>
+              <span>HTML 파일 올리기</span>
+              <input type="file" id="form-code-file" accept=".html,.htm,.txt,text/html" class="hidden" onchange="handleCodeFileUpload(event)">
+            </label>
+            <span class="text-slate-500">← 이게 제일 쉬워요 (AI가 준 파일 그대로)</span>
+          </div>
+
+          <div id="code-file-ok" class="hidden mb-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[11px]"></div>
+
+          <textarea id="form-code" rows="5" required placeholder="파일을 올리면 여기가 자동으로 채워집니다.&#10;(파일을 이 칸에 끌어다 놓아도 되고, 코드를 직접 붙여넣어도 됩니다)" class="w-full px-3 py-2 bg-slate-900 font-mono text-[11px] border border-slate-700 rounded-xl text-slate-200 focus:outline-none focus:border-indigo-500 leading-relaxed custom-scroll transition-colors"></textarea>
         </div>
 
         <!-- Submit Buttons -->
@@ -1165,6 +1174,7 @@
       document.getElementById('game-upload-form').reset();
       uploadedPoster = null;
       document.getElementById('poster-preview-box').classList.add('hidden');
+      document.getElementById('code-file-ok').classList.add('hidden');
     }
 
     /* ── 포스터 사진 줄이기 ──
@@ -1222,6 +1232,49 @@
         document.getElementById('poster-preview-box').classList.add('hidden');
         showToast('사진을 넣지 못했습니다 — 다른 사진을 골라 보세요', '⚠️');
       }
+    }
+
+    /* ── 게임 HTML 파일 올리기 ──
+       AI가 만들어 준 .html 파일을 그대로 올리면 코드 칸을 채운다.
+       코드를 붙여넣는 방식도 그대로 쓸 수 있다 (둘 다 결국 같은 칸으로 모인다). */
+    function handleCodeFileUpload(e) {
+      const file = e.target.files[0];
+      if (file) loadCodeFromFile(file);
+      e.target.value = '';          // 같은 파일을 다시 고를 수 있도록 비운다
+    }
+
+    function loadCodeFromFile(file) {
+      const name = file.name || '파일';
+      if (!/\.(html?|txt)$/i.test(name)) {
+        showToast('HTML 파일(.html)을 올려 주세요', '⚠️');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onerror = () => showToast('파일을 읽지 못했습니다', '⚠️');
+      reader.onload = ev => {
+        const text = String(ev.target.result || '');
+        if (!text.trim()) { showToast('파일이 비어 있습니다', '⚠️'); return; }
+        if (text.length > 1400000) {
+          showToast('게임 파일이 너무 큽니다 — 선생님께 말씀드리세요', '⚠️');
+          return;
+        }
+
+        document.getElementById('form-code').value = text;
+
+        const box = document.getElementById('code-file-ok');
+        const looksLikeHtml = /<html|<!doctype|<body/i.test(text.slice(0, 1000));
+        box.classList.remove('hidden');
+        box.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> <b>${esc(name)}</b> (${text.length < 1024 ? text.length + '자' : Math.round(text.length / 1024) + 'KB'}) 을 읽었습니다.`
+          + (looksLikeHtml ? '' : '<br><span class="text-amber-300">※ HTML 게임 파일이 아닌 것 같습니다. 맞는 파일인지 확인해 주세요.</span>');
+
+        // 제목 칸이 비어 있으면 파일 안의 제목을 가져다 채워 준다
+        const titleBox = document.getElementById('form-title');
+        const found = text.match(/<title[^>]*>([^<]{1,80})<\/title>/i);
+        if (!titleBox.value.trim() && found) titleBox.value = found[1].trim();
+
+        showToast('게임 파일을 읽었습니다!', '📄');
+      };
+      reader.readAsText(file, 'utf-8');
     }
 
     async function handleGameSubmit(e) {
@@ -1294,8 +1347,25 @@
       }, 2800);
     }
 
+    /* 코드 칸에 파일을 끌어다 놓아도 되도록 */
+    function wireCodeDrop() {
+      const ta = document.getElementById('form-code');
+      const hi = on => ta.classList.toggle('border-indigo-400', on);
+      ['dragenter', 'dragover'].forEach(ev =>
+        ta.addEventListener(ev, e => { e.preventDefault(); hi(true); }));
+      ['dragleave', 'dragend'].forEach(ev =>
+        ta.addEventListener(ev, () => hi(false)));
+      ta.addEventListener('drop', e => {
+        e.preventDefault();
+        hi(false);
+        const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+        if (file) loadCodeFromFile(file);
+      });
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
       initAdmin();
+      wireCodeDrop();
       renderStatus();
       loadGames().then(() => {
         // 공유 링크(#게임id)로 들어왔으면 그 게임을 바로 연다
