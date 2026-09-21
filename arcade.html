@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>우리 반 AI 게임 아케이드 🎮 | Student Game Showcase</title>
+  <!-- 저장소 주소 설정 (선생님이 한 줄만 고치는 파일) -->
+  <script src="config.js"></script>
+
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Google Fonts & FontAwesome -->
@@ -150,6 +153,9 @@
 
   <main class="max-w-7xl mx-auto w-full px-4 lg:px-8 py-8 flex-1">
     
+    <!-- 저장 상태 안내 -->
+    <div id="storage-status" class="hidden"></div>
+
     <!-- Filter, Search & Sort Control Bar -->
     <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 mb-8 bg-arcade-card border border-arcade-border p-3 sm:p-4 rounded-2xl shadow-lg">
       
@@ -203,9 +209,9 @@
       <!-- Empty State -->
       <div id="empty-state" class="hidden py-16 text-center bg-arcade-card rounded-3xl border border-slate-800 p-8">
         <div class="text-6xl mb-3">🔍</div>
-        <h4 class="text-xl font-bold text-slate-200 font-jua">조건에 맞는 게임이 없습니다</h4>
-        <p class="text-sm text-slate-400 mt-1">검색어를 바꾸거나 다른 장르를 선택해 보세요.</p>
-        <button onclick="resetFilters()" class="mt-4 px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-500 transition-colors font-jua">
+        <h4 id="empty-title" class="text-xl font-bold text-slate-200 font-jua">조건에 맞는 게임이 없습니다</h4>
+        <p id="empty-desc" class="text-sm text-slate-400 mt-1">검색어를 바꾸거나 다른 장르를 선택해 보세요.</p>
+        <button id="empty-reset" onclick="resetFilters()" class="mt-4 px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-500 transition-colors font-jua">
           필터 초기화
         </button>
       </div>
@@ -398,7 +404,7 @@
           <button type="button" onclick="closeSubmitModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition-colors">
             취소
           </button>
-          <button type="submit" class="px-6 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/30 transition-all font-jua">
+          <button type="submit" id="submit-btn" class="px-6 py-2 disabled:opacity-60 disabled:cursor-wait bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/30 transition-all font-jua">
             등록하기 🚀
           </button>
         </div>
@@ -622,78 +628,195 @@
       }
     ];
 
+    /* ═══════════════════════════════════════════
+       저장소 연결
+       config.js 의 ARCADE_URL 이 채워져 있으면 선생님 구글 시트에 저장한다.
+       비어 있거나 연결이 안 되면 이 기기(localStorage)에만 저장한다 —
+       그래도 새로고침하면 남고, 게임은 똑같이 돌아간다.
+       ═══════════════════════════════════════════ */
+    const ARCADE   = String(window.ARCADE_URL || '').trim();
+    const LS_GAMES = 'arcade_games_v1';
+    const LS_LIKED = 'arcade_liked_v1';
+
+    const GENRES = {
+      cooking: { name: '요리/타이쿤', icon: '🥘' },
+      action:  { name: '러너/액션',   icon: '🏃' },
+      quiz:    { name: '퀴즈/학습',   icon: '🧩' },
+      escape:  { name: '탈출/퍼즐',   icon: '🗝️' }
+    };
+    const genreOf = c => GENRES[c] || { name: '미니게임', icon: '🎮' };
+
+    const PLACEHOLDER = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400">' +
+      '<rect width="600" height="400" fill="#1e293b"/>' +
+      '<text x="300" y="196" font-size="56" text-anchor="middle">🖼️</text>' +
+      '<text x="300" y="246" font-size="22" fill="#94a3b8" text-anchor="middle" ' +
+      'font-family="sans-serif">포스터 없음</text></svg>');
+
+    // 포스터 용량 한도 — 시트 셀(5만 자)과 스크립트 한도에 맞춘 값
+    const THUMB_MAX_SIDE = 320,  THUMB_BUDGET = 42000;
+    const FULL_MAX_SIDE  = 1200, FULL_BUDGET  = 1200000;
+
     // App state
-    let games = [...INITIAL_GAMES];
+    let games = [];
     let currentFilter = 'all';
     let currentSort = 'recent';
     let searchQuery = '';
     let activePlayingGame = null;
-    let uploadedPosterDataUrl = '';
+    let uploadedPoster = null;         // { thumb, full }
+    let connected = false;             // 시트에 붙어 있는가
+    let liked = loadLiked();           // 이 기기에서 하트를 누른 게임 id 들
+    const blobCache = new Map();       // id → { code, poster }
+
+    function loadLiked() {
+      try { return new Set(JSON.parse(localStorage.getItem(LS_LIKED) || '[]')); }
+      catch (e) { return new Set(); }
+    }
+    function saveLiked() {
+      try { localStorage.setItem(LS_LIKED, JSON.stringify([...liked])); } catch (e) {}
+    }
+
+    function readLocalGames() {
+      try {
+        const raw = localStorage.getItem(LS_GAMES);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {}
+      return null;
+    }
+    function saveLocalGames() {
+      if (connected) return;           // 시트에 붙어 있으면 그쪽이 원본이다
+      try { localStorage.setItem(LS_GAMES, JSON.stringify(games)); }
+      catch (e) { showToast('이 기기의 저장 공간이 가득 찼습니다', '⚠️'); }
+    }
+
+    /* 연결 전에 보여 줄 예시 작품 */
+    function seedGames() {
+      return INITIAL_GAMES.map(g => ({
+        id: g.id, title: g.title, author: g.author, gradeClass: g.gradeClass,
+        category: g.category, description: g.description,
+        thumb: g.posterImg, poster: g.posterImg, code: g.codeSnippet,
+        likes: g.likes, plays: g.plays,
+        createdAt: new Date(g.createdAt).getTime(),
+        sample: true
+      }));
+    }
+
+    /* ── 시트와 주고받기 ── */
+    function apiGet(params) {
+      const q = new URLSearchParams(Object.assign({ t: Date.now() }, params)).toString();
+      return fetch(ARCADE + (ARCADE.indexOf('?') >= 0 ? '&' : '?') + q, { method: 'GET' })
+        .then(r => r.json());
+    }
+    function apiPost(body) {
+      return fetch(ARCADE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },  // 프리플라이트를 피하려면 text/plain
+        body: JSON.stringify(body)
+      }).then(r => r.json());
+    }
+
+    async function loadGames() {
+      if (!ARCADE) {
+        connected = false;
+        games = readLocalGames() || seedGames();
+        renderStatus(); renderGallery();
+        return;
+      }
+      try {
+        const d = await apiGet({ mode: 'list' });
+        if (!d || !d.ok) throw new Error((d && d.error) || '응답 형식 오류');
+        connected = true;
+        games = d.games.map(g => Object.assign({}, g, { sample: false }));
+      } catch (err) {
+        connected = false;
+        games = readLocalGames() || seedGames();
+        showToast('저장소에 연결하지 못했습니다 — 이 기기에서만 보입니다', '⚠️');
+      }
+      renderStatus(); renderGallery();
+    }
+
+    /* 게임 코드와 원본 포스터는 실제로 볼 때 가져온다 (목록을 가볍게 유지) */
+    async function ensureAssets(game) {
+      if (game.code) return game;
+      if (blobCache.has(game.id)) return Object.assign(game, blobCache.get(game.id));
+      if (!connected) return game;
+      const d = await apiGet({ mode: 'game', id: game.id });
+      if (!d || !d.ok) throw new Error((d && d.error) || '불러오기 실패');
+      const got = { code: d.code || '', poster: d.poster || '' };
+      blobCache.set(game.id, got);
+      return Object.assign(game, got);
+    }
+
+    function renderStatus() {
+      const box = document.getElementById('storage-status');
+      if (connected) {
+        box.className = 'mb-4 px-4 py-2.5 rounded-xl border text-xs flex items-center gap-2 bg-emerald-500/10 border-emerald-500/30 text-emerald-300';
+        box.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i><span>선생님 저장소에 연결되어 있습니다 — 올린 게임이 <b>모든 기기에서 똑같이</b> 보입니다.</span>';
+      } else if (ARCADE) {
+        box.className = 'mb-4 px-4 py-2.5 rounded-xl border text-xs flex items-center gap-2 bg-rose-500/10 border-rose-500/30 text-rose-300';
+        box.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i><span>저장소에 연결하지 못했습니다. 인터넷을 확인해 주세요 — 지금 올리면 <b>이 기기에만</b> 저장됩니다.</span>';
+      } else {
+        box.className = 'mb-4 px-4 py-2.5 rounded-xl border text-xs flex items-center gap-2 bg-amber-500/10 border-amber-500/30 text-amber-200';
+        box.innerHTML = '<i class="fa-solid fa-circle-info"></i><span><b>저장소가 아직 연결되지 않았습니다.</b> 올린 게임은 이 기기에만 저장됩니다 (선생님: <code class="px-1 rounded bg-black/30">arcade-apps-script.gs</code> 참고).</span>';
+      }
+    }
 
     function renderGallery() {
       const grid = document.getElementById('games-grid');
       const emptyState = document.getElementById('empty-state');
       grid.innerHTML = '';
 
-      // Filter
       let filtered = games.filter(g => {
         const matchesCategory = currentFilter === 'all' || g.category === currentFilter;
-        const matchesSearch = g.title.toLowerCase().includes(searchQuery) ||
-                              g.author.toLowerCase().includes(searchQuery) ||
-                              g.gradeClass.toLowerCase().includes(searchQuery) ||
-                              g.description.toLowerCase().includes(searchQuery);
-        return matchesCategory && matchesSearch;
+        const hay = [g.title, g.author, g.gradeClass, g.description].join(' ').toLowerCase();
+        return matchesCategory && hay.includes(searchQuery);
       });
 
-      // Sort
-      if (currentSort === 'likes') {
-        filtered.sort((a, b) => b.likes - a.likes);
-      } else if (currentSort === 'plays') {
-        filtered.sort((a, b) => b.plays - a.plays);
-      } else {
-        filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      }
+      if (currentSort === 'likes')      filtered.sort((a, b) => b.likes - a.likes);
+      else if (currentSort === 'plays') filtered.sort((a, b) => b.plays - a.plays);
+      else                              filtered.sort((a, b) => b.createdAt - a.createdAt);
 
-      // Update counters
       document.getElementById('gallery-count-badge').innerText = `${filtered.length}개`;
       document.getElementById('count-all').innerText = games.length;
 
-      // Update Header Overall stats
-      const totalPlays = games.reduce((acc, cur) => acc + cur.plays, 0);
-      const totalLikes = games.reduce((acc, cur) => acc + cur.likes, 0);
+      const totalPlays = games.reduce((acc, cur) => acc + (cur.plays || 0), 0);
+      const totalLikes = games.reduce((acc, cur) => acc + (cur.likes || 0), 0);
       document.getElementById('stat-total-games').innerText = games.length;
       document.getElementById('stat-total-plays').innerText = totalPlays.toLocaleString();
       document.getElementById('stat-total-likes').innerText = totalLikes.toLocaleString();
 
       if (filtered.length === 0) {
+        const noneAtAll = games.length === 0;
+        document.getElementById('empty-title').innerText =
+          noneAtAll ? '아직 등록된 게임이 없습니다' : '조건에 맞는 게임이 없습니다';
+        document.getElementById('empty-desc').innerText =
+          noneAtAll ? '«내 게임 등록하기» 를 눌러 첫 번째 작품을 올려 보세요!'
+                    : '검색어를 바꾸거나 다른 장르를 선택해 보세요.';
+        document.getElementById('empty-reset').classList.toggle('hidden', noneAtAll);
         emptyState.classList.remove('hidden');
         return;
-      } else {
-        emptyState.classList.add('hidden');
       }
+      emptyState.classList.add('hidden');
 
-      // Render cards
       filtered.forEach(game => {
+        const g = genreOf(game.category);
+        const isLiked = liked.has(game.id);
         const card = document.createElement('div');
         card.className = 'bg-arcade-card border border-arcade-border rounded-2xl overflow-hidden hover:border-indigo-500/60 transition-all duration-300 shadow-xl flex flex-col group';
 
         card.innerHTML = `
-          <!-- Poster Thumbnail & Badges -->
           <div class="relative h-44 w-full bg-slate-950 overflow-hidden cursor-pointer" onclick="openPlayerModal('${game.id}')">
-            <img src="${game.posterImg}" alt="${game.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-80 group-hover:opacity-100" onerror="this.src='https://placehold.co/600x400/1e293b/94a3b8?text=Poster'">
+            <img src="${game.thumb || PLACEHOLDER}" alt="" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-80 group-hover:opacity-100" onerror="this.onerror=null; this.src=PLACEHOLDER;">
             <div class="absolute inset-0 bg-gradient-to-t from-arcade-card via-transparent to-black/40"></div>
-            
-            <!-- Category Badge -->
+
             <span class="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[11px] font-bold bg-black/60 backdrop-blur border border-white/20 text-white font-jua">
-              ${game.icon} ${game.genreName}
+              ${g.icon} ${g.name}
             </span>
 
-            <!-- Original Poster Quick View Tag -->
             <button onclick="event.stopPropagation(); openPosterPreview('${game.id}')" class="absolute top-3 right-3 px-2 py-1 rounded-lg text-[10px] font-semibold bg-slate-900/80 hover:bg-indigo-600 text-slate-200 border border-slate-700 transition-colors flex items-center gap-1">
               <i class="fa-solid fa-image"></i> 포스터
             </button>
 
-            <!-- Play hover overlay -->
             <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
               <span class="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-xl shadow-lg shadow-indigo-600/50 transform group-hover:scale-110 transition-transform">
                 <i class="fa-solid fa-play ml-0.5"></i>
@@ -701,26 +824,24 @@
             </div>
           </div>
 
-          <!-- Card Body -->
           <div class="p-4 flex-1 flex flex-col justify-between">
             <div>
               <div class="flex items-center justify-between text-[11px] text-slate-400 mb-1.5">
-                <span class="font-bold text-indigo-400"><i class="fa-solid fa-user-graduate mr-1"></i>${game.author} (${game.gradeClass})</span>
+                <span class="font-bold text-indigo-400"><i class="fa-solid fa-user-graduate mr-1"></i>${esc(game.author)} (${esc(game.gradeClass)})</span>
                 <span><i class="fa-solid fa-gamepad mr-1"></i>${game.plays}회 플레이</span>
               </div>
               <h4 class="text-base font-extrabold text-white group-hover:text-indigo-300 transition-colors font-jua line-clamp-1">
-                ${game.title}
+                ${esc(game.title)}
               </h4>
               <p class="text-xs text-slate-400 mt-1.5 line-clamp-2 leading-relaxed">
-                ${game.description}
+                ${esc(game.description)}
               </p>
             </div>
 
-            <!-- Card Bottom Action -->
             <div class="pt-4 mt-4 border-t border-slate-800/80 flex items-center justify-between">
-              <button onclick="toggleCardLike('${game.id}', event)" class="flex items-center gap-1.5 text-xs font-bold ${game.isLiked ? 'text-pink-400' : 'text-slate-400'} hover:text-pink-400 transition-colors">
-                <i class="${game.isLiked ? 'fa-solid text-pink-500' : 'fa-regular'} fa-heart text-sm"></i>
-                <span id="card-like-${game.id}">${game.likes}</span>
+              <button onclick="toggleCardLike('${game.id}', event)" class="flex items-center gap-1.5 text-xs font-bold ${isLiked ? 'text-pink-400' : 'text-slate-400'} hover:text-pink-400 transition-colors">
+                <i class="${isLiked ? 'fa-solid text-pink-500' : 'fa-regular'} fa-heart text-sm"></i>
+                <span>${game.likes}</span>
               </button>
 
               <button onclick="openPlayerModal('${game.id}')" class="px-3.5 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-xl text-xs font-bold transition-all shadow-md font-jua flex items-center gap-1">
@@ -734,18 +855,20 @@
       });
     }
 
+    /* 학생이 적은 글이 화면 구조를 깨뜨리지 않도록 */
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
     function setFilter(category) {
       currentFilter = category;
       playBeep(480, 0.08);
-
       document.querySelectorAll('.filter-btn').forEach(btn => {
-        if (btn.dataset.category === category) {
-          btn.className = 'filter-btn active px-3.5 py-2 rounded-xl font-bold whitespace-nowrap transition-all bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-jua';
-        } else {
-          btn.className = 'filter-btn px-3.5 py-2 rounded-xl font-bold whitespace-nowrap transition-all bg-slate-800 text-slate-300 hover:bg-slate-700 font-jua';
-        }
+        btn.className = btn.dataset.category === category
+          ? 'filter-btn active px-3.5 py-2 rounded-xl font-bold whitespace-nowrap transition-all bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-jua'
+          : 'filter-btn px-3.5 py-2 rounded-xl font-bold whitespace-nowrap transition-all bg-slate-800 text-slate-300 hover:bg-slate-700 font-jua';
       });
-
       renderGallery();
     }
 
@@ -766,57 +889,54 @@
       setFilter('all');
     }
 
-    function openPlayerModal(gameId) {
+    async function openPlayerModal(gameId) {
       const game = games.find(g => g.id === gameId);
       if (!game) return;
 
       activePlayingGame = game;
-      game.plays++;
-
       playBeep(620, 0.12);
 
-      // Setup UI
+      const g = genreOf(game.category);
       document.getElementById('modal-game-title').innerText = game.title;
-      document.getElementById('modal-game-icon').innerText = game.icon;
-      document.getElementById('modal-game-badge').innerText = game.genreName;
+      document.getElementById('modal-game-icon').innerText = g.icon;
+      document.getElementById('modal-game-badge').innerText = g.name;
       document.getElementById('modal-student-author').innerText = `제작: ${game.gradeClass} ${game.author} 학생의 포스터 기반`;
       document.getElementById('player-like-count').innerText = game.likes;
+      document.getElementById('like-btn-player').classList.toggle('bg-pink-500/40', liked.has(game.id));
 
-      const likeBtn = document.getElementById('like-btn-player');
-      if (game.isLiked) {
-        likeBtn.classList.add('bg-pink-500/40', 'text-pink-200');
-      } else {
-        likeBtn.classList.remove('bg-pink-500/40', 'text-pink-200');
-      }
-
-      // Load into iframe
       const frame = document.getElementById('game-frame');
       const loader = document.getElementById('frame-loader');
+      frame.srcdoc = '';
       loader.classList.remove('opacity-0', 'pointer-events-none');
-
-      frame.srcdoc = game.codeSnippet;
-      frame.onload = () => {
-        setTimeout(() => {
-          loader.classList.add('opacity-0', 'pointer-events-none');
-        }, 300);
-      };
-
       document.getElementById('player-modal').classList.remove('hidden');
+
+      try {
+        await ensureAssets(game);
+      } catch (err) {
+        loader.innerHTML = '<div class="text-center px-6"><div class="text-4xl mb-2">😵</div><p class="text-sm text-rose-300 font-bold font-jua">게임을 불러오지 못했습니다</p><p class="text-xs text-slate-400 mt-1">인터넷 연결을 확인하고 다시 눌러 주세요.</p></div>';
+        return;
+      }
+      if (activePlayingGame !== game) return;   // 기다리는 사이에 닫았거나 다른 게임을 열었다
+
+      frame.onload = () => setTimeout(() => loader.classList.add('opacity-0', 'pointer-events-none'), 300);
+      frame.srcdoc = game.code || '<!DOCTYPE html><body style="background:#0b0f19;color:#94a3b8;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh">게임 코드가 비어 있습니다</body>';
+
+      game.plays = (game.plays || 0) + 1;
       renderGallery();
+      if (connected && !game.sample) apiPost({ action: 'play', id: game.id }).catch(() => {});
+      else saveLocalGames();
     }
 
     function closePlayerModal() {
-      const frame = document.getElementById('game-frame');
-      frame.srcdoc = '';
+      document.getElementById('game-frame').srcdoc = '';
       document.getElementById('player-modal').classList.add('hidden');
       activePlayingGame = null;
     }
 
     function reloadGameFrame() {
-      if (!activePlayingGame) return;
+      if (!activePlayingGame || !activePlayingGame.code) return;
       playBeep(520, 0.08);
-      const frame = document.getElementById('game-frame');
-      frame.srcdoc = activePlayingGame.codeSnippet;
+      document.getElementById('game-frame').srcdoc = activePlayingGame.code;
       showToast('🔄 게임을 다시 시작합니다', '🎮');
     }
 
@@ -831,66 +951,85 @@
       }
     }
 
-    function openPosterPreview(gameId) {
+    async function openPosterPreview(gameId) {
       const game = games.find(g => g.id === gameId);
       if (!game) return;
       playBeep(450, 0.08);
-      document.getElementById('poster-viewer-img').src = game.posterImg;
-      document.getElementById('poster-viewer-caption').innerText = `"${game.title}" - ${game.posterDetail || '학생이 직접 손으로 그린 포스터 작품입니다.'}`;
+      const img = document.getElementById('poster-viewer-img');
+      img.src = game.poster || game.thumb || PLACEHOLDER;     // 일단 썸네일로 띄우고
+      document.getElementById('poster-viewer-caption').innerText =
+        `"${game.title}" — ${game.gradeClass} ${game.author} 학생의 원본 포스터`;
       document.getElementById('poster-modal').classList.remove('hidden');
+      try {
+        await ensureAssets(game);                              // 원본이 오면 바꿔 끼운다
+        if (game.poster) img.src = game.poster;
+      } catch (e) {}
     }
 
     function togglePosterModal() {
-      if (activePlayingGame) {
-        openPosterPreview(activePlayingGame.id);
-      } else {
-        document.getElementById('poster-modal').classList.toggle('hidden');
-      }
+      if (activePlayingGame) openPosterPreview(activePlayingGame.id);
+      else document.getElementById('poster-modal').classList.toggle('hidden');
     }
 
+    /* 칭찬 스티커는 하트 +1 로 쌓인다 (되돌리지 않는다) */
     function sendSticker(emoji) {
       if (!activePlayingGame) return;
       playBeep(750, 0.15, 'triangle');
-      activePlayingGame.likes++;
-      document.getElementById('player-like-count').innerText = activePlayingGame.likes;
+      bumpLike(activePlayingGame, 1);
       showToast(`${emoji} ${activePlayingGame.author} 학생에게 칭찬 스티커를 보냈습니다!`, '🎉');
+    }
+
+    function bumpLike(game, delta) {
+      game.likes = Math.max(0, (game.likes || 0) + delta);
+      const el = document.getElementById('player-like-count');
+      if (activePlayingGame && activePlayingGame.id === game.id) el.innerText = game.likes;
+      if (connected && !game.sample) {
+        apiPost({ action: 'like', id: game.id, delta }).catch(() => {});
+      } else {
+        saveLocalGames();
+      }
       renderGallery();
     }
 
+    function toggleLikeFor(game) {
+      const now = !liked.has(game.id);
+      if (now) liked.add(game.id); else liked.delete(game.id);
+      saveLiked();
+      playBeep(now ? 680 : 380, 0.1);
+      bumpLike(game, now ? 1 : -1);
+      document.getElementById('like-btn-player').classList.toggle('bg-pink-500/40', now);
+    }
+
     function toggleCurrentGameLike() {
-      if (!activePlayingGame) return;
-      activePlayingGame.isLiked = !activePlayingGame.isLiked;
-      activePlayingGame.likes += activePlayingGame.isLiked ? 1 : -1;
-      document.getElementById('player-like-count').innerText = activePlayingGame.likes;
-      playBeep(activePlayingGame.isLiked ? 680 : 380, 0.1);
-      renderGallery();
+      if (activePlayingGame) toggleLikeFor(activePlayingGame);
     }
 
     function toggleCardLike(gameId, event) {
       event.stopPropagation();
       const game = games.find(g => g.id === gameId);
-      if (!game) return;
-
-      game.isLiked = !game.isLiked;
-      game.likes += game.isLiked ? 1 : -1;
-      playBeep(game.isLiked ? 680 : 380, 0.1);
-      renderGallery();
+      if (game) toggleLikeFor(game);
     }
 
     function copyGameShareLink() {
       if (!activePlayingGame) return;
-      // Copy URL or notification
-      try {
-        const tempInput = document.createElement('input');
-        tempInput.value = `${window.location.href}#${activePlayingGame.id}`;
-        document.body.appendChild(tempInput);
-        tempInput.select();
-        document.execCommand('copy');
-        document.body.removeChild(tempInput);
-        showToast('🔗 게임 공유 링크가 클립보드에 복사되었습니다!', '📋');
-      } catch (e) {
-        showToast('링크 복사 완료!', '📋');
+      const link = `${location.origin}${location.pathname}#${activePlayingGame.id}`;
+      const done = () => showToast('🔗 게임 공유 링크가 클립보드에 복사되었습니다!', '📋');
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(link).then(done).catch(() => fallbackCopy(link, done));
+      } else {
+        fallbackCopy(link, done);
       }
+    }
+    function fallbackCopy(text, done) {
+      try {
+        const t = document.createElement('input');
+        t.value = text;
+        document.body.appendChild(t);
+        t.select();
+        document.execCommand('copy');
+        document.body.removeChild(t);
+        done();
+      } catch (e) { showToast('링크 복사에 실패했습니다', '⚠️'); }
     }
 
     function openSubmitModal() {
@@ -902,77 +1041,121 @@
     function closeSubmitModal() {
       document.getElementById('submit-modal').classList.add('hidden');
       document.getElementById('game-upload-form').reset();
-      uploadedPosterDataUrl = '';
+      uploadedPoster = null;
       document.getElementById('poster-preview-box').classList.add('hidden');
     }
 
-    function handlePosterFileUpload(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        uploadedPosterDataUrl = event.target.result;
-        document.getElementById('poster-preview-img').src = uploadedPosterDataUrl;
-        document.getElementById('poster-preview-box').classList.remove('hidden');
-        showToast('포스터 이미지가 등록되었습니다!', '📸');
-      };
-      reader.readAsDataURL(file);
+    /* ── 포스터 사진 줄이기 ──
+       학생이 태블릿으로 찍은 사진은 그대로면 수 MB 라 시트에 안 들어간다.
+       화면에 필요한 크기까지 줄이고, 용량 한도에 맞을 때까지 화질을 낮춘다. */
+    function loadImage(src) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('이미지를 읽을 수 없습니다'));
+        img.src = src;
+      });
     }
 
-    function handleGameSubmit(e) {
+    async function shrinkImage(dataUrl, maxSide, budget) {
+      const img = await loadImage(dataUrl);
+      let scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+      let quality = 0.82;
+      for (let i = 0; i < 10; i++) {
+        const w = Math.max(1, Math.round(img.width * scale));
+        const h = Math.max(1, Math.round(img.height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';          // 투명 PNG 가 검게 나오지 않도록
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        const out = canvas.toDataURL('image/jpeg', quality);
+        if (out.length <= budget) return out;
+        if (quality > 0.45) quality -= 0.12; else scale *= 0.8;
+      }
+      return null;
+    }
+
+    async function handlePosterFileUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      showToast('포스터 사진을 정리하는 중…', '⏳');
+      try {
+        const raw = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = ev => resolve(ev.target.result);
+          reader.onerror = () => reject(new Error('파일을 읽을 수 없습니다'));
+          reader.readAsDataURL(file);
+        });
+        const thumb = await shrinkImage(raw, THUMB_MAX_SIDE, THUMB_BUDGET);
+        const full  = await shrinkImage(raw, FULL_MAX_SIDE,  FULL_BUDGET);
+        if (!thumb) throw new Error('사진을 충분히 줄이지 못했습니다');
+        uploadedPoster = { thumb, full: full || thumb };
+        document.getElementById('poster-preview-img').src = thumb;
+        document.getElementById('poster-preview-box').classList.remove('hidden');
+        showToast('포스터 이미지가 등록되었습니다!', '📸');
+      } catch (err) {
+        uploadedPoster = null;
+        document.getElementById('poster-preview-box').classList.add('hidden');
+        showToast('사진을 넣지 못했습니다 — 다른 사진을 골라 보세요', '⚠️');
+      }
+    }
+
+    async function handleGameSubmit(e) {
       e.preventDefault();
+      const btn = document.getElementById('submit-btn');
+      const label = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '올리는 중… ⏳';
 
-      const author = document.getElementById('form-author').value.trim();
-      const gradeClass = document.getElementById('form-class').value.trim();
-      const title = document.getElementById('form-title').value.trim();
-      const category = document.getElementById('form-category').value;
-      const desc = document.getElementById('form-desc').value.trim();
       const urlInput = document.getElementById('form-poster-url').value.trim();
-      const code = document.getElementById('form-code').value.trim();
-
-      // Poster image fallback
-      const poster = uploadedPosterDataUrl || urlInput || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80';
-
-      const genreMap = {
-        cooking: { name: '요리/타이쿤', icon: '🥘', color: 'from-amber-600 to-orange-500' },
-        action: { name: '러너/액션', icon: '🏃', color: 'from-blue-600 to-cyan-500' },
-        quiz: { name: '퀴즈/학습', icon: '🧩', color: 'from-emerald-600 to-teal-500' },
-        escape: { name: '탈출/퍼즐', icon: '🗝️', color: 'from-purple-600 to-indigo-600' }
+      const payload = {
+        action: 'submit',
+        title:       document.getElementById('form-title').value.trim(),
+        author:      document.getElementById('form-author').value.trim(),
+        gradeClass:  document.getElementById('form-class').value.trim(),
+        category:    document.getElementById('form-category').value,
+        description: document.getElementById('form-desc').value.trim(),
+        code:        document.getElementById('form-code').value.trim(),
+        thumb:       uploadedPoster ? uploadedPoster.thumb : (urlInput || PLACEHOLDER),
+        poster:      uploadedPoster ? uploadedPoster.full  : (urlInput || '')
       };
 
-      const newGame = {
-        id: 'game_' + Date.now(),
-        title: title,
-        author: author,
-        gradeClass: gradeClass,
-        category: category,
-        genreName: genreMap[category]?.name || '미니게임',
-        icon: genreMap[category]?.icon || '🎮',
-        color: genreMap[category]?.color || 'from-indigo-600 to-purple-600',
-        posterImg: poster,
-        posterDetail: `${author} 학생이 AI 캔버스에 등록한 원본 포스터`,
-        description: desc,
-        plays: 1,
-        likes: 1,
-        isLiked: false,
-        createdAt: new Date().toISOString().split('T')[0],
-        codeSnippet: code
-      };
+      try {
+        let id;
+        if (connected) {
+          const d = await apiPost(payload);
+          if (!d || !d.ok) throw new Error((d && d.error) || '등록에 실패했습니다');
+          id = d.id;
+        } else {
+          id = 'local_' + Date.now();
+        }
 
-      // Add to beginning of array
-      games.unshift(newGame);
+        const newGame = {
+          id, title: payload.title, author: payload.author, gradeClass: payload.gradeClass,
+          category: payload.category, description: payload.description,
+          thumb: payload.thumb, poster: payload.poster, code: payload.code,
+          likes: 1, plays: 0, createdAt: Date.now(), sample: false
+        };
+        games.unshift(newGame);
+        blobCache.set(id, { code: newGame.code, poster: newGame.poster });
+        saveLocalGames();
 
-      playFanfare();
-      closeSubmitModal();
-      renderGallery();
+        playFanfare();
+        closeSubmitModal();
+        renderGallery();
+        showToast(connected
+          ? `🎉 "${newGame.title}" 게임이 아케이드에 등록되었습니다!`
+          : `"${newGame.title}" 등록 완료 — 이 기기에만 저장됩니다`, '🚀');
 
-      showToast(`🎉 "${title}" 게임이 아케이드에 등록되었습니다!`, '🚀');
-
-      // Auto open newly registered game in player
-      setTimeout(() => {
-        openPlayerModal(newGame.id);
-      }, 500);
+        setTimeout(() => openPlayerModal(id), 500);
+      } catch (err) {
+        showToast('등록하지 못했습니다 — ' + err.message, '⚠️');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = label;
+      }
     }
 
     let toastTimeout = null;
@@ -980,19 +1163,22 @@
       const toast = document.getElementById('toast-message');
       document.getElementById('toast-icon').innerText = icon;
       document.getElementById('toast-text').innerText = text;
-
       toast.classList.remove('opacity-0', 'translate-y-4');
       toast.classList.add('opacity-100', 'translate-y-0');
-
       if (toastTimeout) clearTimeout(toastTimeout);
       toastTimeout = setTimeout(() => {
         toast.classList.remove('opacity-100', 'translate-y-0');
         toast.classList.add('opacity-0', 'translate-y-4');
-      }, 2500);
+      }, 2800);
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-      renderGallery();
+      renderStatus();
+      loadGames().then(() => {
+        // 공유 링크(#게임id)로 들어왔으면 그 게임을 바로 연다
+        const id = location.hash.replace('#', '');
+        if (id && games.some(g => g.id === id)) openPlayerModal(id);
+      });
     });
   </script>
 </body>
