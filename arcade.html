@@ -153,6 +153,9 @@
 
   <main class="max-w-7xl mx-auto w-full px-4 lg:px-8 py-8 flex-1">
     
+    <!-- 관리자 모드 띠 (?admin=암호 로 열었을 때만) -->
+    <div id="admin-bar" class="hidden"></div>
+
     <!-- 저장 상태 안내 -->
     <div id="storage-status" class="hidden"></div>
 
@@ -666,6 +669,16 @@
     let uploadedPoster = null;         // { thumb, full }
     let connected = false;             // 시트에 붙어 있는가
     let liked = loadLiked();           // 이 기기에서 하트를 누른 게임 id 들
+
+    /* ── 관리자 모드 ──
+       주소 뒤에 ?admin=암호 를 붙여 열면 카드마다 숨기기·삭제 버튼이 생긴다.
+       암호는 저장소에 없고 선생님 Apps Script 의 스크립트 속성에만 있으며,
+       실제 숨김·삭제는 서버가 암호를 확인한 뒤에만 처리한다.
+       (화면에 띄워도 되도록, 읽고 나면 주소창에서 바로 지운다) */
+    const SS_ADMIN = 'arcade_admin_key';
+    let adminKey = '';
+    let adminMode = false;
+    let showHidden = true;
     const blobCache = new Map();       // id → { code, poster }
 
     function loadLiked() {
@@ -715,24 +728,113 @@
       }).then(r => r.json());
     }
 
+    function initAdmin() {
+      const p = new URLSearchParams(location.search);
+      const fromUrl = p.get('admin');
+      if (fromUrl) {
+        adminKey = fromUrl;
+        try { sessionStorage.setItem(SS_ADMIN, adminKey); } catch (e) {}
+        p.delete('admin');
+        const q = p.toString();
+        history.replaceState(null, '', location.pathname + (q ? '?' + q : '') + location.hash);
+      } else {
+        try { adminKey = sessionStorage.getItem(SS_ADMIN) || ''; } catch (e) {}
+      }
+      adminMode = !!adminKey;
+    }
+
+    function exitAdmin() {
+      adminKey = '';
+      adminMode = false;
+      try { sessionStorage.removeItem(SS_ADMIN); } catch (e) {}
+      showToast('관리자 모드를 껐습니다', '🔒');
+      loadGames();
+    }
+
+    function toggleShowHidden() {
+      showHidden = !showHidden;
+      renderAdminBar();
+      renderGallery();
+    }
+
+    function renderAdminBar() {
+      const bar = document.getElementById('admin-bar');
+      if (!adminMode) { bar.className = 'hidden'; bar.innerHTML = ''; return; }
+      const hiddenCount = games.filter(g => g.hidden).length;
+      bar.className = 'mb-3 px-4 py-2.5 rounded-xl border bg-indigo-500/10 border-indigo-400/40 text-indigo-200 text-xs flex flex-wrap items-center gap-x-4 gap-y-2';
+      bar.innerHTML = `
+        <span class="font-bold flex items-center gap-1.5 font-jua"><i class="fa-solid fa-user-shield"></i> 관리자 모드</span>
+        <span class="text-indigo-300/80">카드마다 «숨기기»·«삭제» 버튼이 보입니다${hiddenCount ? ` · 숨긴 작품 ${hiddenCount}개` : ''}</span>
+        <span class="ml-auto flex items-center gap-2">
+          <button onclick="toggleShowHidden()" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200">
+            ${showHidden ? '숨긴 작품 가리기' : '숨긴 작품 보기'}
+          </button>
+          <button onclick="exitAdmin()" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200">
+            <i class="fa-solid fa-lock mr-1"></i>끄기
+          </button>
+        </span>`;
+    }
+
+    /* 숨기기 / 되돌리기 / 삭제 — 서버가 암호를 확인한다 */
+    async function adminAction(gameId, what) {
+      const game = games.find(g => g.id === gameId);
+      if (!game) return;
+
+      // 저장소를 쓰는데 연결이 끊긴 상태라면, 이 기기에서만 지운 척하는 일이 없도록 막는다
+      if (ARCADE && !connected) {
+        showToast('저장소에 연결되지 않아 지금은 바꿀 수 없습니다', '⚠️');
+        return;
+      }
+
+      if (what === 'delete') {
+        const ok = confirm(`"${game.title}" 을(를) 완전히 삭제합니다.\n\n되돌릴 수 없습니다. 잠깐 내리기만 하려면 «숨기기» 를 쓰세요.\n\n삭제할까요?`);
+        if (!ok) return;
+      }
+
+      try {
+        if (connected && !game.sample) {
+          const d = await apiPost({ action: what, id: game.id, key: adminKey });
+          if (!d || !d.ok) throw new Error((d && d.error) || '처리하지 못했습니다');
+        }
+        if (what === 'delete') {
+          games = games.filter(g => g.id !== gameId);
+          blobCache.delete(gameId);
+          showToast(`"${game.title}" 을(를) 삭제했습니다`, '🗑️');
+        } else {
+          game.hidden = (what === 'hide');
+          showToast(game.hidden ? `"${game.title}" 을(를) 숨겼습니다 — 학생에게 안 보입니다`
+                                : `"${game.title}" 을(를) 다시 공개했습니다`, game.hidden ? '🙈' : '👀');
+        }
+        saveLocalGames();
+        renderAdminBar();
+        renderGallery();
+      } catch (err) {
+        showToast('실패했습니다 — ' + err.message, '⚠️');
+      }
+    }
+
     async function loadGames() {
       if (!ARCADE) {
         connected = false;
         games = readLocalGames() || seedGames();
-        renderStatus(); renderGallery();
+        renderStatus(); renderAdminBar(); renderGallery();
         return;
       }
       try {
-        const d = await apiGet({ mode: 'list' });
+        const d = await apiGet(adminMode ? { mode: 'list', admin: adminKey } : { mode: 'list' });
         if (!d || !d.ok) throw new Error((d && d.error) || '응답 형식 오류');
         connected = true;
         games = d.games.map(g => Object.assign({}, g, { sample: false }));
+        if (adminMode && d.admin === false) {
+          adminMode = false;
+          showToast('관리자 암호가 맞지 않습니다', '🔒');
+        }
       } catch (err) {
         connected = false;
         games = readLocalGames() || seedGames();
         showToast('저장소에 연결하지 못했습니다 — 이 기기에서만 보입니다', '⚠️');
       }
-      renderStatus(); renderGallery();
+      renderStatus(); renderAdminBar(); renderGallery();
     }
 
     /* 게임 코드와 원본 포스터는 실제로 볼 때 가져온다 (목록을 가볍게 유지) */
@@ -767,6 +869,7 @@
       grid.innerHTML = '';
 
       let filtered = games.filter(g => {
+        if (g.hidden && !(adminMode && showHidden)) return false;
         const matchesCategory = currentFilter === 'all' || g.category === currentFilter;
         const hay = [g.title, g.author, g.gradeClass, g.description].join(' ').toLowerCase();
         return matchesCategory && hay.includes(searchQuery);
@@ -776,17 +879,18 @@
       else if (currentSort === 'plays') filtered.sort((a, b) => b.plays - a.plays);
       else                              filtered.sort((a, b) => b.createdAt - a.createdAt);
 
+      const visible = games.filter(g => !g.hidden);
       document.getElementById('gallery-count-badge').innerText = `${filtered.length}개`;
-      document.getElementById('count-all').innerText = games.length;
+      document.getElementById('count-all').innerText = visible.length;
 
-      const totalPlays = games.reduce((acc, cur) => acc + (cur.plays || 0), 0);
-      const totalLikes = games.reduce((acc, cur) => acc + (cur.likes || 0), 0);
-      document.getElementById('stat-total-games').innerText = games.length;
+      const totalPlays = visible.reduce((acc, cur) => acc + (cur.plays || 0), 0);
+      const totalLikes = visible.reduce((acc, cur) => acc + (cur.likes || 0), 0);
+      document.getElementById('stat-total-games').innerText = visible.length;
       document.getElementById('stat-total-plays').innerText = totalPlays.toLocaleString();
       document.getElementById('stat-total-likes').innerText = totalLikes.toLocaleString();
 
       if (filtered.length === 0) {
-        const noneAtAll = games.length === 0;
+        const noneAtAll = games.filter(g => !g.hidden).length === 0;
         document.getElementById('empty-title').innerText =
           noneAtAll ? '아직 등록된 게임이 없습니다' : '조건에 맞는 게임이 없습니다';
         document.getElementById('empty-desc').innerText =
@@ -802,7 +906,8 @@
         const g = genreOf(game.category);
         const isLiked = liked.has(game.id);
         const card = document.createElement('div');
-        card.className = 'bg-arcade-card border border-arcade-border rounded-2xl overflow-hidden hover:border-indigo-500/60 transition-all duration-300 shadow-xl flex flex-col group';
+        card.className = 'bg-arcade-card border rounded-2xl overflow-hidden hover:border-indigo-500/60 transition-all duration-300 shadow-xl flex flex-col group '
+          + (game.hidden ? 'border-amber-500/50 opacity-60' : 'border-arcade-border');
 
         card.innerHTML = `
           <div class="relative h-44 w-full bg-slate-950 overflow-hidden cursor-pointer" onclick="openPlayerModal('${game.id}')">
@@ -812,6 +917,7 @@
             <span class="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[11px] font-bold bg-black/60 backdrop-blur border border-white/20 text-white font-jua">
               ${g.icon} ${g.name}
             </span>
+            ${game.hidden ? '<span class="absolute bottom-3 left-3 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/90 text-amber-950 font-jua">🙈 숨김 — 학생에게 안 보임</span>' : ''}
 
             <button onclick="event.stopPropagation(); openPosterPreview('${game.id}')" class="absolute top-3 right-3 px-2 py-1 rounded-lg text-[10px] font-semibold bg-slate-900/80 hover:bg-indigo-600 text-slate-200 border border-slate-700 transition-colors flex items-center gap-1">
               <i class="fa-solid fa-image"></i> 포스터
@@ -849,6 +955,17 @@
                 <i class="fa-solid fa-arrow-right text-[10px]"></i>
               </button>
             </div>
+
+            ${adminMode ? `
+            <div class="pt-3 mt-3 border-t border-dashed border-indigo-500/30 flex items-center gap-2 text-[11px]">
+              <span class="text-indigo-400 font-bold"><i class="fa-solid fa-user-shield"></i></span>
+              <button onclick="adminAction('${game.id}', '${game.hidden ? 'show' : 'hide'}')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold">
+                ${game.hidden ? '👀 다시 공개' : '🙈 숨기기'}
+              </button>
+              <button onclick="adminAction('${game.id}', 'delete')" class="px-2.5 py-1 rounded-lg bg-rose-600/20 hover:bg-rose-600/40 border border-rose-500/40 text-rose-300 font-bold">
+                🗑️ 삭제
+              </button>
+            </div>` : ''}
           </div>
         `;
         grid.appendChild(card);
@@ -1173,6 +1290,7 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
+      initAdmin();
       renderStatus();
       loadGames().then(() => {
         // 공유 링크(#게임id)로 들어왔으면 그 게임을 바로 연다
