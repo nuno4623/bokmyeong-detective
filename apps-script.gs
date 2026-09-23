@@ -36,7 +36,7 @@
 
 var SHEET_NAME = '진행상황';
 var HEADERS = ['모둠명', '연 단서', '단서 목록', '지목 시도', '해결', '막힌 문제(현재)',
-               '마지막 활동', '마지막 접속', '지목 용의자', '근거1', '근거2', '근거3', '악보 위치'];
+               '마지막 활동', '마지막 접속', '사탕', '지목 용의자', '근거1', '근거2', '근거3', '악보 위치'];
 
 function sheet_() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -98,6 +98,7 @@ function doPost(e) {
       typeof d.stuck === 'string' ? d.stuck : (d.stuck || []).join(' '),
       lastActive,
       now,
+      Number(d.candy) || 0,
       d.suspect || '',
       String(d.r1 || '').slice(0, 500),
       String(d.r2 || '').slice(0, 500),
@@ -136,7 +137,8 @@ function doGet() {
           stuck: String(r[5] || ''),
           lastActive: r[6] ? new Date(r[6]).getTime() : 0,
           lastSeen: r[7] ? new Date(r[7]).getTime() : 0,
-          suspect: String(r[8] || '')
+          candy: Number(r[8]) || 0,
+          suspect: String(r[9] || '')
         });
       }
     }

@@ -257,6 +257,23 @@
     font-size:12.5px; font-weight:800; color:#fff; flex-shrink:0}
   .script .ln .tx{font-size:14.5px; font-weight:700; line-height:1.65}
   .script .ln .tx .nm{color:var(--blue); font-weight:800; display:block; font-size:12px; margin-bottom:3px}
+  /* 사탕 보상 */
+  .rewardbox{margin-top:18px; background:linear-gradient(135deg,#FFFBE8,#FFF6D4);
+    border:3px solid var(--lemon-deep); border-radius:16px; padding:18px 20px; text-align:center}
+  .rewardbox .rlabel2{font-size:12px; font-weight:800; color:#9C7B1E; letter-spacing:.04em}
+  .rewardbox .rcount{font-size:24px; font-weight:800; color:var(--blue); margin-top:6px; letter-spacing:-.02em}
+  .rewardbox .rcount b{font-size:32px; color:#C9873A}
+  .candyrow{display:flex; justify-content:center; gap:6px; flex-wrap:wrap; margin-top:12px}
+  .candyrow .candy{font-size:28px; line-height:1.2; width:34px; height:34px; display:grid; place-items:center;
+    border-radius:10px; background:#fff; border:2px dashed var(--lemon-deep); color:#D6CFA8}
+  .candyrow .candy.on{background:#FFF3C4; border-style:solid; color:inherit}
+  .rhits{display:flex; justify-content:center; gap:7px; flex-wrap:wrap; margin-top:14px}
+  .rhits .hit{background:#fff; border:2px solid var(--lemon-deep); color:var(--blue);
+    font-size:13px; font-weight:800; padding:6px 13px; border-radius:999px}
+  .rewardbox .rmore{font-size:13px; font-weight:700; color:var(--dim); margin-top:12px; line-height:1.7}
+  .rewardbox .rnone{font-size:13.5px; font-weight:700; color:var(--dim); margin-top:12px; line-height:1.8}
+  .rewardbox .rnone b, .rewardbox .rmore b{color:var(--blue)}
+
   .answerbox{margin-top:18px; background:var(--blue-soft); border:2px solid var(--blue-line);
     border-radius:14px; padding:16px 18px}
   .answerbox h4{font-size:14px; font-weight:800; color:var(--blue); margin-bottom:9px}
@@ -813,18 +830,28 @@ const ENDING = [
   { who:'강지휘 선생님', line:'정답. 내일 그 시♭, 틀리지 마라.' },
 ];
 
-/* 교사용 채점 기준 — 기획서 §6 */
+/* 결정적 단서 5종 — 기획서 §6.
+   근거에 이게 들어 있으면 사탕을 하나씩 준다. 띄어쓰기를 지운 뒤 비교하므로
+   "회색 털"·"회색털" 처럼 붙여 쓰든 띄어 쓰든 똑같이 인정된다. */
 const KEY_CLUE_WORDS = [
-  { label:'발자국 5cm', words:['발자국','5cm','5 cm','발자욱'] },
-  { label:'회색 털',    words:['회색 털','회색털','털'] },
-  { label:'이빨 자국',  words:['이빨','이발 자국','물어뜯','물어 뜯','깨문'] },
-  { label:'급식실 목격',words:['급식실','아주머니','목격','종이를 물'] },
-  { label:'창문 안쪽',  words:['창문','안에서만','안쪽'] },
+  { label:'발자국 5cm', emoji:'🐾',
+    words:['발자국','발자욱','5cm','5센티','오센티','5센치'] },
+  { label:'회색 털', emoji:'🧶',
+    words:['털'] },
+  { label:'이빨 자국', emoji:'🦷',
+    words:['이빨','잇자국','이자국','물어뜯','물어뜨','깨물','깨문','치아'] },
+  { label:'급식실 목격', emoji:'👀',
+    words:['급식실','아주머니','목격','종이를물','종이물고'] },
+  { label:'창문 안쪽', emoji:'🪟',
+    words:['창문','안에서만','안쪽','안에있'] },
 ];
 const DECOY_WORDS = [
   { label:'CCTV·무대열', words:['cctv','무대열'] },
   { label:'바장조 쪽지', words:['쪽지','바장조가'] },
 ];
+
+/* 악보 위치를 맞히면 보너스 사탕 1개 */
+const placeIsRight = p => /피아노/.test(p) && /(밑|아래|속|안|상자)/.test(p);
 
 /* 틀리게 지목했을 때, 왜 그 사람이 아닌지 짚어 준다 — 다시 생각할 실마리만 주고 답은 말하지 않는다 */
 const REBUT = {
@@ -834,6 +861,7 @@ const REBUT = {
   mudae:'김서준: "무대열 아저씨 신발은 <b>270mm</b>야. 그런데 창틀 발자국은 <b>5cm</b>였어."<br>이승하: "CCTV에 찍혔다고 다 범인은 아니야. 발 크기가 아예 달라."',
 };
 
+/* 패들렛 제출은 사탕 보상으로 대체했다. 되돌리고 싶으면 결과 화면 버튼만 다시 넣으면 된다. */
 const PADLET = 'https://padlet.com/dpad566776/6-s023ofzett0iigolsg49';
 
 /* 교사 모드 — 주소 뒤에 ?teacher=1 을 붙였을 때만 채점 참고 줄이 보인다.
@@ -918,6 +946,7 @@ function syncUp(active){
         tries:S.tries, solved:S.solved, stuck,
         suspect: picked ? picked.name : '',
         r1:S.accuse.r1, r2:S.accuse.r2, r3:S.accuse.r3, place:S.accuse.place,
+        candy: S.solved ? reward().count : 0,
         active: !!active,
       }),
       keepalive:true,
@@ -1253,9 +1282,17 @@ document.getElementById('submitBtn').addEventListener('click', ()=>{
    ═══════════════════════════════════════════ */
 const esc0 = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
+/* 근거 3줄에서 키워드를 찾는다. 띄어쓰기는 무시한다. */
 function matched(list){
-  const hay = [S.accuse.r1, S.accuse.r2, S.accuse.r3, S.accuse.place].join(' ').toLowerCase();
-  return list.filter(k => k.words.some(w => hay.includes(w.toLowerCase()))).map(k=>k.label);
+  const hay = [S.accuse.r1, S.accuse.r2, S.accuse.r3].join(' ').toLowerCase().replace(/\s+/g,'');
+  return list.filter(k => k.words.some(w => hay.includes(w.toLowerCase().replace(/\s+/g,''))));
+}
+
+/* 사탕 계산: 결정적 단서 1개당 1개 + 악보 위치를 맞히면 1개 (최대 6개) */
+function reward(){
+  const hits = matched(KEY_CLUE_WORDS);
+  const placeOK = placeIsRight(S.accuse.place);
+  return { hits, placeOK, count: hits.length + (placeOK ? 1 : 0), max: KEY_CLUE_WORDS.length + 1 };
 }
 
 function renderResult(correct){
@@ -1279,10 +1316,15 @@ function renderResult(correct){
     return;
   }
 
-  const keys = matched(KEY_CLUE_WORDS);
-  const decoys = matched(DECOY_WORDS);
-  const placeOK = /피아노/.test(S.accuse.place) && /(밑|아래|상자)/.test(S.accuse.place);
+  const R = reward();
+  const keys = R.hits.map(k => k.label);
+  const decoys = matched(DECOY_WORDS).map(k => k.label);
+  const placeOK = R.placeOK;
   const esc = esc0;
+
+  const candyRow = Array.from({length:R.max}, (_,i) =>
+    `<span class="candy ${i < R.count ? 'on' : ''}">${i < R.count ? '🍬' : '·'}</span>`).join('');
+  const missed = R.max - R.count;
 
   card.innerHTML = `
     <div class="rhead"><span class="badge">사건 해결</span>
@@ -1302,6 +1344,20 @@ function renderResult(correct){
             <span class="tx"><span class="nm">${e.who}</span>"${e.line}"</span></div>`;
         }).join('')}
       </div>
+      <div class="rewardbox">
+        <div class="rlabel2">근거를 잘 쓴 만큼 받는 보상</div>
+        <div class="rcount">🍬 사탕 <b>${R.count}</b>개 획득!</div>
+        <div class="candyrow">${candyRow}</div>
+        ${R.count === 0
+          ? `<p class="rnone">이번엔 사탕을 못 받았어요. 다음엔 <b>단서에서 본 사실</b>을
+               그대로 적어 보세요 — 크기·시간 같은 숫자가 들어가면 좋아요.</p>`
+          : `<div class="rhits">
+              ${R.hits.map(k => `<span class="hit">${k.emoji} ${k.label}</span>`).join('')}
+              ${placeOK ? `<span class="hit">🎯 악보 위치</span>` : ''}
+             </div>
+             ${missed ? `<p class="rmore">아직 찾지 못한 근거가 <b>${missed}개</b> 더 있어요.</p>` : `<p class="rmore">완벽해요! 모든 근거를 찾았습니다 🎉</p>`}`}
+      </div>
+
       <div class="answerbox">
         <h4>📋 ${esc(S.team)} 수사 보고서</h4>
         <div class="kv"><span>지목</span> 쉼표 (음악실 고양이) ✔</div>
@@ -1324,10 +1380,8 @@ function renderResult(correct){
 
   acts.innerHTML = `
     <button class="btn solid" id="saveBtn">📷 결과를 이미지로 저장</button>
-    <button class="btn" id="padBtn">📤 패들렛으로 제출</button>
     <button class="btn ghost sm" id="backBtn">🗂 단서 보드로</button>`;
   document.getElementById('saveBtn').onclick = saveImage;
-  document.getElementById('padBtn').onclick = ()=> window.open(PADLET, '_blank');
   document.getElementById('backBtn').onclick = ()=>{ renderBoard(); show('board'); };
 }
 

@@ -74,6 +74,8 @@
   .pill.go{background:var(--blue-soft); color:var(--blue)}
   .pill.stuck{background:#FBEEDC; color:var(--warn)}
   .pill.idle{background:#FBE4E3; color:var(--no)}
+  .candyq{background:#FFF3C4; color:#9C7B1E; font-size:12.5px; font-weight:800;
+    padding:5px 11px; border-radius:999px; white-space:nowrap}
   .ago{font-size:12.5px; font-weight:700; color:var(--dim); white-space:nowrap}
   .ago.old{color:var(--no)}
 
@@ -195,7 +197,7 @@ function render(rows, note){
   const body = list.length === 0
     ? `<div class="empty">아직 올라온 모둠이 없습니다.<br>모둠이 모둠명을 입력하면 여기에 나타납니다.</div>`
     : `<table>
-        <tr><th>모둠</th><th>진행</th><th>지목</th><th>상태</th><th>마지막 활동</th></tr>
+        <tr><th>모둠</th><th>진행</th><th>지목</th><th>상태</th><th>사탕</th><th>마지막 활동</th></tr>
         ${list.map(r => {
           const idle = now - (r.lastActive || 0);
           const pct = Math.round(r.openedCount / TOTAL * 100);
@@ -206,6 +208,7 @@ function render(rows, note){
               <span class="cnt">${r.openedCount}/${TOTAL}</span></div></td>
             <td class="num">${r.tries || '–'}</td>
             <td><span class="pill ${r.st.cls}">${r.st.label}</span></td>
+            <td class="num">${r.candy ? `<span class="candyq">🍬 ${r.candy}</span>` : '–'}</td>
             <td><span class="ago ${idle > IDLE ? 'old' : ''}">${agoText(idle)}</span></td>
           </tr>`;
         }).join('')}
