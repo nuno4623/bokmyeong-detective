@@ -367,7 +367,7 @@
       <div style="flex:1; min-width:260px">
         <div class="h2"><span class="tag">STEP 3</span>단서 보드</div>
         <p class="sub">수사를 진행하면 음악 문제가 <b>무작위로</b> 나와요. 문제는 고를 수 없습니다.<br>
-          정답을 맞히면 단서가 하나씩 열립니다. <b>8개</b>를 열면 범인을 지목할 수 있어요.</p>
+          정답을 맞히면 단서가 하나씩 열립니다. <b>단서를 모두 찾아야</b> 범인을 지목할 수 있어요.</p>
         <div class="progress"><i id="progBar"></i></div>
       </div>
       <button class="btn" id="accuseBtn" disabled>🎯 범인 지목하기</button>
@@ -873,7 +873,7 @@ const TEACHER = /[?&]teacher=1/.test(location.search);
    ═══════════════════════════════════════════ */
 const KEY = 'bm_detective_v2';
 const POOL = CLUES.filter(c => c.tier > 0);     // 뽑기에 들어가는 단서 12개 (13번 제외)
-const NEED = 8;                                  // 범인 지목에 필요한 단서 수
+const NEED = POOL.length;                        // 범인 지목에 필요한 단서 수 — 12개 전부
 const FINALE = CLUES[12];                        // 황금 열쇠 — 결말에서만
 
 const shuffle = a => { a = a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
